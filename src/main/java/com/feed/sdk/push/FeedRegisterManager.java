@@ -1,10 +1,9 @@
 package com.feed.sdk.push;
 
 import android.content.Context;
-import android.util.Log;
+
 
 import androidx.annotation.NonNull;
-
 
 import com.feed.sdk.push.common.Assets;
 import com.feed.sdk.push.common.Logs;
@@ -17,7 +16,7 @@ import com.feed.sdk.push.net.ResponseListener;
 
 import org.json.JSONObject;
 
-import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -86,17 +85,28 @@ public class FeedRegisterManager {
                 @Override
                 public void onResponse(Response resp) {
                     if(!resp.isError()){
-                        Logs.i("Token sent!!!", token);
+                        Logs.d("Token sent!!! "+ token);
                     }else{
                         Logs.e("That didn't work!");
                     }
                 }
             });
-
+          /*  MyData.put("token", token);
+            Request req1= new Request(Const.TOKEN_SAVE, Request.REQUEST_POST, MyData, new ResponseListener() {
+                @Override
+                public void onResponse(Response resp) {
+                    if(!resp.isError()){
+                        Logs.d("Token sent!!!", token);
+                    }else{
+                        Logs.d("That didn't work!");
+                    }
+                }
+            });*/
             FeedNet.getInstance(context).executeRequest(req);
+           // FeedNet.getInstance(context).executeRequest(req1);
 
         } else {
-            Logs.e("Feedify", "Missing (feedify_user, feedify_dkey, feedify_domain) strings please make sure to update your feedify credentials in push-settings.json.");
+            Logs.d( "Missing (feedify_user, feedify_dkey, feedify_domain) strings please make sure to update your feedify credentials in push-settings.json.");
         }
     }
 }

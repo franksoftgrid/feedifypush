@@ -41,6 +41,10 @@ public class FeedNet {
         return new FeedNet(ctx);
     }
 
+    public void downloadPush(){
+
+    }
+
 
     public void executeRequest(final Request request) {
         new Thread(new Runnable() {
@@ -59,6 +63,61 @@ public class FeedNet {
             }
         }).start();
 
+    }
+
+    public Bitmap getImage(Request req){
+        if (!isNetworkAvailable()) {
+            return null;
+        }
+
+        try {
+            URL url = new URL(req.getRequestUrl());
+            URLConnection urlConn = url.openConnection();
+            InputStream in = urlConn.getInputStream();
+            Bitmap data = getBitmap(in);
+            in.close();
+           return data;
+
+        } catch (Exception ex) {
+
+           return null;
+
+        }
+    }
+
+    public String getHttpResponse(Request req) {
+        if (!isNetworkAvailable()) {
+            return null;
+        }
+
+        HttpURLConnection con = getHttpURLConnection(req);
+        if (con != null) {
+            try {
+                // TODO: Add support for 301 and 302 redirect response.
+                int resCode = con.getResponseCode();
+                if ( resCode == 200 || resCode == 206 ) {
+                    InputStream in = con.getInputStream();
+                    int code = con.getResponseCode();
+                    String data = getData(in);
+
+                    return data;
+                } else {
+
+                    return null;
+                }
+            } catch (Exception ex) {
+
+                return null;
+
+            } finally {
+                try {
+                    if (con != null)
+                        con.disconnect();
+                } catch (Exception ex) {
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -92,10 +151,7 @@ public class FeedNet {
             ex.printStackTrace();
 
         } finally {
-            try {
 
-            } catch (Exception ex) {
-            }
         }
 
 
@@ -126,7 +182,6 @@ public class FeedNet {
 
                     Response resp = new Response(true, "Invalid response code", "");
                     sendResponse(request.getListener(), resp);
-                    // listener.onError(new MAdeptNetworkError(request.getRequestId(), "Invalid Response Code"));
                 }
             } catch (Exception ex) {
 

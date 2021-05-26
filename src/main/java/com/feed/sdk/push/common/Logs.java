@@ -9,7 +9,7 @@ public class Logs {
 
 
     private static final String TAG = "Feedify-Push";
-    public static boolean enabled;
+    private static boolean enabled;
     public static List<Class> debuggingClasses;
 
     public static void setEnabled(boolean enable) {

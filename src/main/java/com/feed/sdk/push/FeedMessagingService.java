@@ -1,5 +1,12 @@
 package com.feed.sdk.push;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
 
 import com.feed.sdk.push.common.Logs;
@@ -16,17 +23,22 @@ public class FeedMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        if (FeedSDK.isEnabled())
-            DataProvider.loadData(this);
+        Pref.showToast(FeedMessagingService.this,"Push received");
+        if (FeedSDK.isEnabled()){
+            NotificationProvider.onMessageReceived(FeedMessagingService.this, remoteMessage);
+        }
 
     }
+
 
 
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
-        Logs.i("Token:", token);
+        Logs.d("Token:"+ token);
         Pref.get(this).put(FCM_TOKEN, token);
         FeedRegisterManager.invoke(this);
     }
+
+
 }

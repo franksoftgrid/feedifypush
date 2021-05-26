@@ -1,5 +1,7 @@
 package com.feed.sdk.push.net;
 
+import org.json.JSONObject;
+
 import java.net.URLEncoder;
 import java.util.Map;
 
@@ -16,6 +18,7 @@ public class Request {
     private ResponseListener listener;
     private Map<String, String> params;
     private String url;
+    private JSONObject paramsObject;
 
     private Map<String, String> headers;
 
@@ -23,6 +26,13 @@ public class Request {
         this.url = url;
         this.method = method;
         this.params = params;
+        this.listener = listener;
+    }
+
+    public Request(String url, int method, JSONObject params, ResponseListener listener ){
+        this.url = url;
+        this.method = method;
+        this.paramsObject = params;
         this.listener = listener;
     }
 
@@ -56,12 +66,17 @@ public class Request {
 
     private String getPostParams(){
         String rtn="";
-        for(String key:params.keySet()){
-            try {
-                rtn+= URLEncoder.encode(key,"UTF-8")+"="+URLEncoder.encode(params.get(key),"UTF-8")+"&";
-            }catch(Exception e){
+        if (params != null){
+            for(String key:params.keySet()){
+                try {
+                    rtn+= URLEncoder.encode(key,"UTF-8")+"="+URLEncoder.encode(params.get(key),"UTF-8")+"&";
+                }catch(Exception e){
+                }
             }
+        }else{
+            rtn = paramsObject.toString();
         }
+
         return rtn;
     }
 

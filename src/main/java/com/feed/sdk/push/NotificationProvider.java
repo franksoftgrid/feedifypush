@@ -8,23 +8,31 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.ColorSpace;
-import android.graphics.drawable.Icon;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
-import android.widget.ImageView;
+import android.provider.Settings;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.feed.sdk.push.common.Cache;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
+import com.feed.sdk.push.common.Logs;
 import com.feed.sdk.push.model.ModelNotification;
 import com.feed.sdk.push.net.FeedNet;
 import com.feed.sdk.push.net.Request;
+import com.feed.sdk.push.net.Response;
 import com.feed.sdk.push.net.ResponseListener;
 import com.google.firebase.messaging.RemoteMessage;
 
 import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NotificationProvider {
 
@@ -37,11 +45,15 @@ public class NotificationProvider {
      NotificationProvider(ModelNotification model) {
         this.model = model;
     }
-
+    Bitmap icon =null;
+    Bitmap image = null;
+    Notification notification;
     private void showNotification(final Context context) {
-        String feed_channel = "feed_channel";
-        createNotificationChannel(context, feed_channel, "Feed", "Feed notification.", NotificationManager.IMPORTANCE_MAX);
-
+        String feed_channel = "FEEDIFY_CHANNEL";
+        try {
+            createNotificationChannel(context, feed_channel, feed_channel, "Feed notification channel.", NotificationManager.IMPORTANCE_DEFAULT);
+        }catch(Exception ex){
+        }
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, feed_channel)
                 .setSmallIcon(FeedSDK.notificationIcon)
                 .setContentTitle(model.title)
@@ -50,142 +62,95 @@ public class NotificationProvider {
                         .bigText(model.body))
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
 
         PendingIntent pendingIntent = PendingIntent.getActivity(context, model.id, getIntent(context), PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
         int  i = 2500;
-        for(ModelNotification.ActionButton button : model.actionButtons){
-            PendingIntent pi = PendingIntent.getActivity(context,i,getButtonIntent(button.getAction()),PendingIntent.FLAG_UPDATE_CURRENT);
+        // Add push buttons
+        for(ModelNotification.ActionButton button : model.pushButtons){
+            PendingIntent pi = PendingIntent.getActivity(context,i,getPushButtonIntent(context,button),PendingIntent.FLAG_UPDATE_CURRENT);
             NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
             builder.addAction(action);
             i += 1;
         }
+        int pushButtonCount = model.pushButtons.size();
 
-
-
-        if (model.icon != null && model.image == null) {
-            Bitmap bitmap = Cache.getBitmap(context, model.icon);
-            if (bitmap == null) {
-                Request req = new Request(model.icon, Request.REQUEST_IMAGE, null, new ResponseListener() {
-                    @Override
-                    public void onResponse(com.feed.sdk.push.net.Response resp) {
-                        if(!resp.isError()){
-                            Cache.save_bitmap(context, model.icon, resp.getBitmap());
-                            builder.setLargeIcon(resp.getBitmap());
-                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                        }else{
-                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                        }
-                    }
-                });
-
-                FeedNet.getInstance(context).executeRequest(req);
-            } else {
-                builder.setLargeIcon(bitmap);
-                NotificationManagerCompat.from(context).notify(model.id, builder.build());
-            }
-
-
-        } else if (model.icon == null && model.image != null) {
-            Bitmap bitmap = Cache.getBitmap(context, model.image);
-            if (bitmap == null) {
-                Request req = new Request(model.image, Request.REQUEST_IMAGE, null, new ResponseListener() {
-                    @Override
-                    public void onResponse(com.feed.sdk.push.net.Response resp) {
-                        if(!resp.isError()){
-                            Cache.save_bitmap(context, model.image, resp.getBitmap());
-                            builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(resp.getBitmap()));
-                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                        }else{
-                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                        }
-                    }
-                });
-
-                FeedNet.getInstance(context).executeRequest(req);
-
-            } else {
-                builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(bitmap));
-                NotificationManagerCompat.from(context).notify(model.id, builder.build());
-            }
-        } else if (model.icon != null && model.image != null) {
-            final Bitmap bitmap = Cache.getBitmap(context, model.icon);
-            if (bitmap == null) {
-
-                Request req = new Request(model.icon, Request.REQUEST_IMAGE, null, new ResponseListener() {
-                    @Override
-                    public void onResponse(com.feed.sdk.push.net.Response resp) {
-                        if(!resp.isError()){
-                            Cache.save_bitmap(context, model.icon, resp.getBitmap());
-                            builder.setLargeIcon(resp.getBitmap());
-                            Bitmap bitmapLarge = Cache.getBitmap(context, model.image);
-
-                            if (bitmapLarge == null) {
-
-                                Request req = new Request(model.image, Request.REQUEST_IMAGE, null, new ResponseListener() {
-                                    @Override
-                                    public void onResponse(com.feed.sdk.push.net.Response resp) {
-                                        if(!resp.isError()){
-                                            Cache.save_bitmap(context, model.image, resp.getBitmap());
-                                            builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(resp.getBitmap()));
-                                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                                        }else{
-                                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                                        }
-                                    }
-                                });
-
-                                FeedNet.getInstance(context).executeRequest(req);
-
-                            } else {
-                                builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(bitmapLarge));
-                                NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                            }
-
-                        }else{
-                            NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                        }
-                    }
-                });
-
-                FeedNet.getInstance(context).executeRequest(req);
-
-            } else {
-                builder.setLargeIcon(bitmap);
-                Bitmap bitmapLarge = Cache.getBitmap(context, model.image);
-                if (bitmapLarge == null) {
-                    Request req = new Request(model.image, Request.REQUEST_IMAGE, null, new ResponseListener() {
-                        @Override
-                        public void onResponse(com.feed.sdk.push.net.Response resp) {
-                            if(!resp.isError()){
-                                Cache.save_bitmap(context, model.image, resp.getBitmap());
-                                builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(resp.getBitmap()));
-                                NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                            }else{
-                                NotificationManagerCompat.from(context).notify(model.id, builder.build());
-                            }
-                        }
-                    });
-
-                    FeedNet.getInstance(context).executeRequest(req);
-                } else {
-                    builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(bitmapLarge));
-                    NotificationManagerCompat.from(context).notify(model.id, builder.build());
+        // If push buttons are less than two and there are actions buttons add those
+        if( model.pushButtons.size() < 2 ) {
+            for (ModelNotification.ActionButton button : model.actionButtons) {
+                PendingIntent pi = PendingIntent.getActivity(context, i, getButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
+                NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
+                builder.addAction(action);
+                i += 1;
+                pushButtonCount += 1;
+                if(pushButtonCount == 2){
+                    break;
                 }
             }
-        } else {
-            NotificationManagerCompat.from(context).notify(model.id, builder.build());
+        }
+        notification = builder.build();
+        notification.flags = Notification.FLAG_AUTO_CANCEL;
+        NotificationManagerCompat.from(context).notify(model.id, notification);
+
+        if(model.icon != null){
+
+            Glide.with(context)
+                    .asBitmap()
+                    .load(model.icon)
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                            icon = resource;
+                            if(icon != null ){
+                                builder.setLargeIcon(icon);
+                                notification = builder.build();
+                                notification.flags = Notification.FLAG_AUTO_CANCEL;
+                                NotificationManagerCompat.from(context).notify(model.id, notification);
+                            }
+                        }
+
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                        }
+                    });
         }
 
+        if(model.image != null){
+            Glide.with(context)
+                    .asBitmap()
+                    .load(model.image)
+                    .into(new CustomTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                            image = resource;
+                            if(image != null ){
+                                builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
+                                notification = builder.build();
+                                notification.flags = Notification.FLAG_AUTO_CANCEL;
+                                NotificationManagerCompat.from(context).notify(model.id, notification);
+                            }
+                        }
 
+                        @Override
+                        public void onLoadCleared(@Nullable Drawable placeholder) {
+                        }
+
+                        @Override
+                        public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                            super.onLoadFailed(errorDrawable);
+                        }
+                    });
+        }
     }
 
-
-
     private Intent getIntent(Context context) {
-        if (FeedSDK.activityClass != null) {
+        if (FeedSDK.activityClass != null && model.customParams != null && !model.customParams.isEmpty()) {
             Intent intent = new Intent(context, FeedSDK.activityClass);
+            for(String key : model.customParams.keySet()){
+                intent.putExtra(key,model.customParams.get(key));
+            }
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             return intent;
         } else if (model.url != null) {
@@ -201,28 +166,68 @@ public class NotificationProvider {
         }
     }
 
-    private Intent getButtonIntent(String url){
+    private Intent getButtonIntent(Context ctx, ModelNotification.ActionButton b){
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(url));
+        intent.setData(Uri.parse(b.getAction()));
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;
     }
 
-    public static void onMessageReceived(Context context, String jsonString) {
-        try {
-            ModelNotification model = ModelNotification.getInstance(jsonString);
-            NotificationProvider np = new NotificationProvider(model);
-            np.showNotification( context);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    private Intent getPushButtonIntent(Context ctx, ModelNotification.ActionButton b){
+        Intent intent = null;
+        if(FeedSDK.activityClass != null){
+            intent = new Intent(ctx,FeedSDK.activityClass);
+            for(String key : model.customParams.keySet()){
+                intent.putExtra(key,model.customParams.get(key));
+            }
+            intent.putExtra(b.getTitle(),b.getAction());
+           // intent.setData(Uri.parse(b.getAction()));
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         }
+        else {
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(b.getAction()));
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+        return intent;
     }
 
-    public static void onMessageReceived(Context context, RemoteMessage remoteMessage) {
+    public static void onMessageReceived(final Context context, RemoteMessage remoteMessage) {
         try {
-            ModelNotification model = ModelNotification.getInstance(remoteMessage);
-            NotificationProvider np = new NotificationProvider(model);
-            np.showNotification(context);
+            ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
+
+            if (model != null && model.type.equalsIgnoreCase("ad") && model.title.isEmpty()){
+
+                JSONObject payloadObj = new JSONObject();
+                payloadObj.put("notification",  new JSONObject(remoteMessage.getData()));
+                payloadObj.put("to", "https://fcm.googleapis.com/fcm/send/"+FeedSDK.getToken(context));
+                Request req= new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
+                    @Override
+                    public void onResponse(Response resp) {
+                        if(!resp.isError()){
+                            Logs.d("Token sent!!! ");
+                            String data = resp.getData();
+                            try {
+                                JSONObject responseObject = new JSONObject(data);
+                                ModelNotification internalModel = ModelNotification.getInstance(responseObject);
+                                NotificationProvider np = new NotificationProvider(internalModel);
+                                np.showNotification(context);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }else{
+                            Logs.e("That didn't work!");
+                        }
+                    }
+                });
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json; charset=UTF-8");
+                req.setHeaders(headers);
+                FeedNet.getInstance(context).executeRequest(req);
+            }else {
+                NotificationProvider np = new NotificationProvider(model);
+                np.showNotification(context);
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -230,7 +235,8 @@ public class NotificationProvider {
 
     private static void createNotificationChannel(Context context, String channel_id, String channel_name, String channel_description, int importance) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channel_id, channel_name, importance);
+            int importance1 = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(channel_id, channel_name, importance1);
             channel.setDescription(channel_description);
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
@@ -244,6 +250,9 @@ public class NotificationProvider {
      * @return image resource
      */
     private int getActionIcon(String name){
+        if(name == null){
+            return R.drawable.add;
+        }
         switch(name){
             case "television-1":
                 return R.drawable.television_1;
@@ -1035,8 +1044,6 @@ public class NotificationProvider {
                 return R.drawable.close;
             case "speaker-6":
                 return R.drawable.speaker_6;
-
-
         }
         return R.drawable.add;
     }

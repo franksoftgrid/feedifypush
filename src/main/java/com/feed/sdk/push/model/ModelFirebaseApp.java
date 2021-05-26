@@ -26,7 +26,6 @@ public class ModelFirebaseApp {
     public static ModelFirebaseApp getInstance(Context context) throws GoogleServiceJsonException {
         try {
             String googleServicesJson = Assets.textFileToString(context, "google-services.json");
-
             JSONObject root = new JSONObject(googleServicesJson);
             JSONObject project_info = root.getJSONObject("project_info");
             JSONArray client = root.getJSONArray("client");

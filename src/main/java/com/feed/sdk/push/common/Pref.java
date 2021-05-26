@@ -3,6 +3,9 @@ package com.feed.sdk.push.common;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 
 import androidx.preference.PreferenceManager;
 
@@ -110,5 +113,15 @@ public class Pref {
 
     public void clear(String key) {
         privatePref.edit().remove(key).commit();
+    }
+
+    public static void showToast(final Context ctx, final String msg){
+        /*
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
+                Toast.makeText(ctx,msg,Toast.LENGTH_LONG).show();
+            }
+        });*/
     }
 }

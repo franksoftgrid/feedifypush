@@ -17,9 +17,9 @@ public class Cache {
         key = Base64.encodeToString(key.getBytes(), Base64.DEFAULT);
         Logs.e("=========key====save======", key);
         if (bitmap != null) {
-            File cacheDir = context.getCacheDir();
-            File file = new File(cacheDir, key);
             try {
+                File cacheDir = context.getCacheDir();
+                File file = new File(cacheDir, key);
                 FileOutputStream out = new FileOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.PNG, 0, out);
                 out.flush();
@@ -35,10 +35,11 @@ public class Cache {
     public static Bitmap getBitmap(Context context, String key) {
         key = Base64.encodeToString(key.getBytes(), Base64.DEFAULT);
         Logs.e("=========key====take======", key);
-        File cacheDir = context.getCacheDir();
-        File file = new File(cacheDir, key);
+
         FileInputStream fis = null;
         try {
+            File cacheDir = context.getCacheDir();
+            File file = new File(cacheDir, key);
             fis = new FileInputStream(file);
         } catch (FileNotFoundException e) {
         }

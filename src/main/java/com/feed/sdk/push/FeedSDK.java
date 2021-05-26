@@ -22,7 +22,7 @@ public class FeedSDK /*extends Application*/ {
     protected static @DrawableRes
     int notificationIcon = R.drawable.ic_notification;
 
-    public void setStartActivity(Class activityClass) {
+    public static void setStartActivity(Class activityClass) {
         FeedSDK.activityClass = activityClass;
     }
 
@@ -31,6 +31,7 @@ public class FeedSDK /*extends Application*/ {
     }
 
     public static void setEnabled(boolean enable) {
+
         Pref.get(mContext).put(Const.PREF_ENABLE_KEY, enable);
     }
 
@@ -41,25 +42,33 @@ public class FeedSDK /*extends Application*/ {
 
     private static Context mContext;
 
-
     public static void init(Context ctx){
-        mContext = ctx;
-        Logs.setEnabled(BuildConfig.DEBUG);
+        FeedSDK.init(ctx,"Feedify");
+    }
 
-        initializeApp(ctx);
+    public static void init(Context ctx,String appName){
+        mContext = ctx;
+       // Logs.setEnabled(BuildConfig.DEBUG);
+        Logs.setEnabled(false);
+        initializeApp(ctx,appName);
         Logs.i("ModelDeviceApp info...", true);
-        ModelDeviceApp modelDeviceApp = ModelDeviceApp.getInstance(ctx);
-        Logs.i("device_name", modelDeviceApp.device_name);
-        Logs.i("device_uuid", modelDeviceApp.device_uuid);
-        Logs.i("package_name", modelDeviceApp.package_name);
-        Logs.i("app_name", modelDeviceApp.app_name);
-        Logs.i("platform", modelDeviceApp.platform);
+        try{
+            ModelDeviceApp modelDeviceApp = ModelDeviceApp.getInstance(ctx);
+            Logs.i("device_name", modelDeviceApp.device_name);
+            Logs.i("device_uuid", modelDeviceApp.device_uuid);
+            Logs.i("package_name", modelDeviceApp.package_name);
+            Logs.i("app_name", modelDeviceApp.app_name);
+            Logs.i("platform", modelDeviceApp.platform);
+        }catch(Exception ex){
+            Logs.e(ex.getMessage());
+        }
+
 
         FeedRegisterManager.invoke(ctx);
     }
 
 
-    private static void initializeApp(@NonNull Context context) {
+    private static void initializeApp(@NonNull Context context,String appName) {
         try {
             ModelFirebaseApp modelFirebaseApp = ModelFirebaseApp.getInstance(context);
 
@@ -76,10 +85,12 @@ public class FeedSDK /*extends Application*/ {
                     setApplicationId(modelFirebaseApp.mobilesdk_app_id).
                     setDatabaseUrl(modelFirebaseApp.firebase_url).
                     setGcmSenderId(modelFirebaseApp.project_number).
-                    setStorageBucket(modelFirebaseApp.storage_bucket).build());
+                    setStorageBucket(modelFirebaseApp.storage_bucket).build(),appName);
 
         } catch (GoogleServiceJsonException e) {
             e.printStackTrace();
+        }catch(Exception ex){
+            ex.printStackTrace();
         }
     }
 
