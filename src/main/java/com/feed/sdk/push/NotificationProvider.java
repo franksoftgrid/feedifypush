@@ -8,8 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.provider.Settings;
 
@@ -21,6 +23,7 @@ import androidx.core.app.NotificationManagerCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
+import com.feed.sdk.push.common.Cache;
 import com.feed.sdk.push.common.Logs;
 import com.feed.sdk.push.model.ModelNotification;
 import com.feed.sdk.push.net.FeedNet;
@@ -31,6 +34,10 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,8 +77,9 @@ public class NotificationProvider {
         int  i = 2500;
         // Add push buttons
         for(ModelNotification.ActionButton button : model.pushButtons){
-            PendingIntent pi = PendingIntent.getActivity(context,i,getPushButtonIntent(context,button),PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context,button),PendingIntent.FLAG_UPDATE_CURRENT);
             NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
+            builder.setAutoCancel(true);
             builder.addAction(action);
             i += 1;
         }
@@ -82,6 +90,7 @@ public class NotificationProvider {
             for (ModelNotification.ActionButton button : model.actionButtons) {
                 PendingIntent pi = PendingIntent.getActivity(context, i, getButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
                 NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
+                builder.setAutoCancel(true);
                 builder.addAction(action);
                 i += 1;
                 pushButtonCount += 1;
@@ -90,9 +99,7 @@ public class NotificationProvider {
                 }
             }
         }
-        notification = builder.build();
-        notification.flags = Notification.FLAG_AUTO_CANCEL;
-        NotificationManagerCompat.from(context).notify(model.id, notification);
+
 
         if(model.icon != null){
 
@@ -115,6 +122,15 @@ public class NotificationProvider {
                         public void onLoadCleared(@Nullable Drawable placeholder) {
                         }
                     });
+//            new GetImages(model.icon, builder).execute()
+
+//            icon = Cache.getBitmap(context, model.icon);
+//            if (icon == null) {
+//                Request req = new Request(model.icon, Request.REQUEST_IMAGE, (Map<String, String>) null, null);
+//                icon = FeedNet.getInstance(context).getImage(req);
+//                if (icon != null)
+//                    Cache.save_bitmap(context, model.icon, icon);
+//            }
         }
 
         if(model.image != null){
@@ -142,7 +158,20 @@ public class NotificationProvider {
                             super.onLoadFailed(errorDrawable);
                         }
                     });
+//            image = Cache.getBitmap(context, model.image);
+//            if (image == null) {
+//                Request req = new Request(model.image, Request.REQUEST_IMAGE, (Map<String, String>) null, null);
+//                image = FeedNet.getInstance(context).getImage(req);
+//                if (image != null)
+//                    Cache.save_bitmap(context, model.image, image);
+//            }
         }
+
+        builder.setLargeIcon(icon);
+        builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
+        notification = builder.build();
+        notification.flags = Notification.FLAG_AUTO_CANCEL;
+        NotificationManagerCompat.from(context).notify(model.id, notification);
     }
 
     private Intent getIntent(Context context) {

@@ -1,6 +1,9 @@
 package com.feed.sdk.push;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
 
 
 import androidx.annotation.NonNull;
@@ -49,14 +52,32 @@ public class FeedRegisterManager {
         String feedify_domain = "";
 
         try {
-            pushSettingsJson = Assets.textFileToString(context, SETTINGS_FILE_NAME);
+//            pushSettingsJson = Assets.textFileToString(context, SETTINGS_FILE_NAME);
+//
+//            JSONObject root = new JSONObject(pushSettingsJson);
+//            JSONObject project_info = root.getJSONObject(KEY_PROJECT_INFO);
+//
+//            feedify_user = project_info.getString(KEY_USER);
+//            feedify_dkey = project_info.getString(KEY_DKEY);
+//            feedify_domain = project_info.getString(KEY_DOMAIN);
 
-            JSONObject root = new JSONObject(pushSettingsJson);
-            JSONObject project_info = root.getJSONObject(KEY_PROJECT_INFO);
+            ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            Bundle bundle = appInfo.metaData;
 
-            feedify_user = project_info.getString(KEY_USER);
-            feedify_dkey = project_info.getString(KEY_DKEY);
-            feedify_domain = project_info.getString(KEY_DOMAIN);
+            if (bundle != null) {
+                if (bundle.containsKey(KEY_USER)) {
+                    feedify_user = bundle.getString(KEY_USER);
+                    if (feedify_user == null){
+                        feedify_user = String.valueOf(bundle.getInt("feedify_user"));
+                    }
+                }
+                if (bundle.containsKey(KEY_DKEY)) {
+                    feedify_dkey = bundle.getString(KEY_DKEY);
+                }
+                if (bundle.containsKey(KEY_DOMAIN)) {
+                    feedify_domain = bundle.getString(KEY_DOMAIN);
+                }
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

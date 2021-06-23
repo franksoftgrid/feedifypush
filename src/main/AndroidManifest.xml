@@ -13,5 +13,17 @@
             </intent-filter>
         </service>
 
+        <meta-data
+            android:name="feedify_user"
+            android:value="${feedify_user}" />
+
+        <meta-data
+            android:name="feedify_dkey"
+            android:value="${feedify_dkey}" />
+
+        <meta-data
+            android:name="feedify_domain"
+            android:value="${feedify_domain}" />
+
     </application>
 </manifest>
