@@ -13,7 +13,9 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Handler;
 import android.provider.Settings;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,6 +38,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -44,6 +50,7 @@ import java.util.Map;
 public class NotificationProvider {
 
     private ModelNotification model;
+    private static final String TAG = NotificationProvider.class.getName();
 
     /**
      * private constructor for internal use
@@ -60,7 +67,13 @@ public class NotificationProvider {
         try {
             createNotificationChannel(context, feed_channel, feed_channel, "Feed notification channel.", NotificationManager.IMPORTANCE_DEFAULT);
         }catch(Exception ex){
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Notification shown success: ");
+            Log.d(TAG, "========================================================************============================");
         }
+        Log.d(TAG, "========================================================************============================");
+        Log.d(TAG, "Inside showNotification");
+        Log.d(TAG, "========================================================************============================");
         final NotificationCompat.Builder builder = new NotificationCompat.Builder(context, feed_channel)
                 .setSmallIcon(FeedSDK.notificationIcon)
                 .setContentTitle(model.title)
@@ -71,7 +84,14 @@ public class NotificationProvider {
                 .setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
-
+        Log.d(TAG, "========================================================************============================");
+        Log.d(TAG, "Model Details: ");
+        Log.d(TAG, "Model id: "+model.id);
+        Log.d(TAG, "Model icon: "+model.icon);
+        Log.d(TAG, "Model image: "+model.image);
+        Log.d(TAG, "Model tile: "+model.title);
+        Log.d(TAG, "Model body: "+model.body);
+        Log.d(TAG, "========================================================************============================");
         PendingIntent pendingIntent = PendingIntent.getActivity(context, model.id, getIntent(context), PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
         int  i = 2500;
@@ -102,76 +122,112 @@ public class NotificationProvider {
 
 
         if(model.icon != null){
-
-            Glide.with(context)
-                    .asBitmap()
-                    .load(model.icon)
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                            icon = resource;
-                            if(icon != null ){
-                                builder.setLargeIcon(icon);
-                                notification = builder.build();
-                                notification.flags = Notification.FLAG_AUTO_CANCEL;
-                                NotificationManagerCompat.from(context).notify(model.id, notification);
-                            }
-                        }
-
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                        }
-                    });
-//            new GetImages(model.icon, builder).execute()
-
-//            icon = Cache.getBitmap(context, model.icon);
-//            if (icon == null) {
-//                Request req = new Request(model.icon, Request.REQUEST_IMAGE, (Map<String, String>) null, null);
-//                icon = FeedNet.getInstance(context).getImage(req);
-//                if (icon != null)
-//                    Cache.save_bitmap(context, model.icon, icon);
-//            }
+            new FetchIconTask(context, model.icon, builder).execute("");
         }
 
-        if(model.image != null){
-            Glide.with(context)
-                    .asBitmap()
-                    .load(model.image)
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                            image = resource;
-                            if(image != null ){
-                                builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
-                                notification = builder.build();
-                                notification.flags = Notification.FLAG_AUTO_CANCEL;
-                                NotificationManagerCompat.from(context).notify(model.id, notification);
-                            }
-                        }
 
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                        }
+    }
 
-                        @Override
-                        public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                            super.onLoadFailed(errorDrawable);
-                        }
-                    });
-//            image = Cache.getBitmap(context, model.image);
-//            if (image == null) {
-//                Request req = new Request(model.image, Request.REQUEST_IMAGE, (Map<String, String>) null, null);
-//                image = FeedNet.getInstance(context).getImage(req);
-//                if (image != null)
-//                    Cache.save_bitmap(context, model.image, image);
-//            }
+
+    private class FetchIconTask extends AsyncTask<String, Void, Bitmap> {
+
+        Context ctx;
+        String urlIcon;
+        NotificationCompat.Builder builder;
+
+        public FetchIconTask(Context context, String icon, NotificationCompat.Builder builder) {
+            super();
+            this.ctx = context;
+            urlIcon = icon;
+            this.builder = builder;
         }
 
-        builder.setLargeIcon(icon);
-        builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
-        notification = builder.build();
-        notification.flags = Notification.FLAG_AUTO_CANCEL;
-        NotificationManagerCompat.from(context).notify(model.id, notification);
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Inside Icon fetch");
+            Log.d(TAG, "========================================================************============================");
+            InputStream in;
+
+            try {
+                URL url = new URL(model.icon);
+                icon = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                return icon;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+
+            super.onPostExecute(result);
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Icon fetch completed");
+            Log.d(TAG, "========================================================************============================");
+            new FetchImageTask(ctx, model.image, builder).execute("");
+
+        }
+    }
+
+    private class FetchImageTask extends AsyncTask<String, Void, Bitmap> {
+
+        Context ctx;
+        String urlImage;
+        NotificationCompat.Builder builder;
+
+        public FetchImageTask(Context context, String icon, NotificationCompat.Builder builder) {
+            super();
+            this.ctx = context;
+            urlImage = icon;
+            this.builder = builder;
+        }
+
+        @Override
+        protected Bitmap doInBackground(String... params) {
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Inside image fetch");
+            Log.d(TAG, "========================================================************============================");
+            InputStream in;
+
+            try {
+
+//                URL url = new URL(urlImage);
+//                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+//                connection.setDoInput(true);
+//                connection.connect();
+//                in = connection.getInputStream();
+//                image = BitmapFactory.decodeStream(in);
+                URL url = new URL(model.image);
+                image = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                return image;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+
+            super.onPostExecute(result);
+            builder.setLargeIcon(icon);
+            builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
+            builder.setGroup("FEEDIFY");
+            builder.setGroupSummary(true);
+            notification = builder.build();
+            notification.flags = Notification.FLAG_AUTO_CANCEL;
+            NotificationManagerCompat.from(ctx).notify(model.id, notification);
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Notification shown success: ");
+            Log.d(TAG, "========================================================************============================");
+
+        }
     }
 
     private Intent getIntent(Context context) {
@@ -223,6 +279,10 @@ public class NotificationProvider {
 
     public static void onMessageReceived(final Context context, RemoteMessage remoteMessage) {
         try {
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Inside onMessage received");
+            Log.d(TAG, "========================================================************============================");
+
             ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
 
             if (model != null && model.type.equalsIgnoreCase("ad") && model.title.isEmpty()){
@@ -243,6 +303,9 @@ public class NotificationProvider {
                                 np.showNotification(context);
                             } catch (JSONException e) {
                                 e.printStackTrace();
+                                Log.d(TAG, "========================================================************============================");
+                                Log.d(TAG, "Exception: "+e.getMessage());
+                                Log.d(TAG, "========================================================************============================");
                             }
                         }else{
                             Logs.e("That didn't work!");
@@ -259,6 +322,10 @@ public class NotificationProvider {
             }
         } catch (JSONException e) {
             e.printStackTrace();
+            Log.d(TAG, "========================================================************============================");
+            Log.d(TAG, "Exception: "+e.getMessage());
+            Log.d(TAG, "========================================================************============================");
+
         }
     }
 
