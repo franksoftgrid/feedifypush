@@ -14,7 +14,7 @@ import com.feed.sdk.push.model.ModelFirebaseApp;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 
-public class FeedSDK /*extends Application*/ {
+public class FeedSDK extends Application {
 
     private static final String TAG = "FeedSDK";
 

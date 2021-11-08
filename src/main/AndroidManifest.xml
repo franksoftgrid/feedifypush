@@ -1,5 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.feed.sdk.push">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -7,7 +6,15 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application android:name="com.feed.sdk.push.FeedSDK">
-        <service android:name="com.feed.sdk.push.FeedMessagingService">
+        <receiver android:name=".activity.FeedSDKActionButton$ButtonReceiver">
+
+        </receiver>
+        <activity
+            android:name=".activity.FeedSDKActionButton"
+            android:exported="false"></activity>
+        <service
+            android:name="com.feed.sdk.push.FeedMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>

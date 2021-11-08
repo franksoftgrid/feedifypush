@@ -4,28 +4,22 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.transition.Transition;
-import com.feed.sdk.push.common.Cache;
+import com.feed.sdk.push.activity.FeedSDKActionButton;
 import com.feed.sdk.push.common.Logs;
 import com.feed.sdk.push.model.ModelNotification;
 import com.feed.sdk.push.net.FeedNet;
@@ -37,13 +31,10 @@ import com.google.firebase.messaging.RemoteMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,22 +42,29 @@ public class NotificationProvider {
 
     private ModelNotification model;
     private static final String TAG = NotificationProvider.class.getName();
+    public static final String NOTIFICATION_KEY = "notificationId";
+//    private ButtonReceiver buttonReceiver;
 
     /**
      * private constructor for internal use
+     *
      * @param model
      */
-     NotificationProvider(ModelNotification model) {
+    NotificationProvider(ModelNotification model, Context context) {
         this.model = model;
+//        buttonReceiver = new ButtonReceiver();
+//        registerBroadCastReceiver(context);
     }
-    Bitmap icon =null;
+
+    Bitmap icon = null;
     Bitmap image = null;
     Notification notification;
+
     private void showNotification(final Context context) {
         String feed_channel = "FEEDIFY_CHANNEL";
         try {
             createNotificationChannel(context, feed_channel, feed_channel, "Feed notification channel.", NotificationManager.IMPORTANCE_DEFAULT);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             Log.d(TAG, "========================================================************============================");
             Log.d(TAG, "Notification shown success: ");
             Log.d(TAG, "========================================================************============================");
@@ -86,47 +84,62 @@ public class NotificationProvider {
 
         Log.d(TAG, "========================================================************============================");
         Log.d(TAG, "Model Details: ");
-        Log.d(TAG, "Model id: "+model.id);
-        Log.d(TAG, "Model icon: "+model.icon);
-        Log.d(TAG, "Model image: "+model.image);
-        Log.d(TAG, "Model tile: "+model.title);
-        Log.d(TAG, "Model body: "+model.body);
+        Log.d(TAG, "Model id: " + model.id);
+        Log.d(TAG, "Model icon: " + model.icon);
+        Log.d(TAG, "Model image: " + model.image);
+        Log.d(TAG, "Model tile: " + model.title);
+        Log.d(TAG, "Model body: " + model.body);
         Log.d(TAG, "========================================================************============================");
         PendingIntent pendingIntent = PendingIntent.getActivity(context, model.id, getIntent(context), PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
-        int  i = 2500;
+        int i = 2500;
         // Add push buttons
-        for(ModelNotification.ActionButton button : model.pushButtons){
-            PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context,button),PendingIntent.FLAG_UPDATE_CURRENT);
-            NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
-            builder.setAutoCancel(true);
-            builder.addAction(action);
-            i += 1;
-        }
-        int pushButtonCount = model.pushButtons.size();
 
-        // If push buttons are less than two and there are actions buttons add those
-        if( model.pushButtons.size() < 2 ) {
-            for (ModelNotification.ActionButton button : model.actionButtons) {
-                PendingIntent pi = PendingIntent.getActivity(context, i, getButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
+        //Create an Intent for the BroadcastReceiver
+//        Intent buttonIntent = new Intent(context, ButtonReceiver.class);
+//        buttonIntent.putExtra("notificationId", model.id);
+
+
+        for (ModelNotification.ActionButton button : model.pushButtons) {
+            if (!button.getTitle().equals("")) {
+                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
                 NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
                 builder.setAutoCancel(true);
                 builder.addAction(action);
                 i += 1;
-                pushButtonCount += 1;
-                if(pushButtonCount == 2){
-                    break;
+            }
+        }
+        int pushButtonCount = model.pushButtons.size();
+
+        // If push buttons are less than two and there are actions buttons add those
+        if (model.pushButtons.size() < 2) {
+            for (ModelNotification.ActionButton button : model.actionButtons) {
+                if (!button.getTitle().equals("")) {
+                    PendingIntent pi = PendingIntent.getBroadcast(context, i, getButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
+                    NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
+                    builder.setAutoCancel(true);
+                    builder.addAction(action);
+                    i += 1;
+                    pushButtonCount += 1;
+                    if (pushButtonCount == 2) {
+                        break;
+                    }
                 }
             }
         }
 
 
-        if(model.icon != null){
+        if (model.icon != null) {
             new FetchIconTask(context, model.icon, builder).execute("");
         }
 
 
     }
+
+//    private void registerBroadCastReceiver(final Context context) {
+//        IntentFilter filter = new IntentFilter();
+//        context.registerReceiver(buttonReceiver, filter);
+//    }
 
 
     private class FetchIconTask extends AsyncTask<String, Void, Bitmap> {
@@ -217,9 +230,10 @@ public class NotificationProvider {
 
             super.onPostExecute(result);
             builder.setLargeIcon(icon);
-            builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
-            builder.setGroup("FEEDIFY");
-            builder.setGroupSummary(true);
+            if (image != null)
+                builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
+//            builder.setGroup("FEEDIFY");
+//            builder.setGroupSummary(true);
             notification = builder.build();
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             NotificationManagerCompat.from(ctx).notify(model.id, notification);
@@ -233,8 +247,8 @@ public class NotificationProvider {
     private Intent getIntent(Context context) {
         if (FeedSDK.activityClass != null && model.customParams != null && !model.customParams.isEmpty()) {
             Intent intent = new Intent(context, FeedSDK.activityClass);
-            for(String key : model.customParams.keySet()){
-                intent.putExtra(key,model.customParams.get(key));
+            for (String key : model.customParams.keySet()) {
+                intent.putExtra(key, model.customParams.get(key));
             }
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             return intent;
@@ -251,25 +265,33 @@ public class NotificationProvider {
         }
     }
 
-    private Intent getButtonIntent(Context ctx, ModelNotification.ActionButton b){
-        Intent intent = new Intent(Intent.ACTION_VIEW);
+    private Intent getButtonIntent(Context ctx, ModelNotification.ActionButton b) {
+        Intent intent = new Intent(ctx, FeedSDKActionButton.ButtonReceiver.class);
+        intent.putExtra(NOTIFICATION_KEY, model.id);
+//        Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(b.getAction()));
+        intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;
     }
 
-    private Intent getPushButtonIntent(Context ctx, ModelNotification.ActionButton b){
+    private Intent getPushButtonIntent(Context ctx, ModelNotification.ActionButton b) {
         Intent intent = null;
-        if(FeedSDK.activityClass != null){
-            intent = new Intent(ctx,FeedSDK.activityClass);
-            for(String key : model.customParams.keySet()){
-                intent.putExtra(key,model.customParams.get(key));
+        if (FeedSDK.activityClass != null) {
+            intent = new Intent(ctx, FeedSDK.activityClass);
+            for (String key : model.customParams.keySet()) {
+                intent.putExtra(key, model.customParams.get(key));
             }
-            intent.putExtra(b.getTitle(),b.getAction());
-           // intent.setData(Uri.parse(b.getAction()));
+            intent.putExtra(b.getTitle(), b.getAction());
+            // intent.setData(Uri.parse(b.getAction()));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        }
-        else {
+        } else {
+//            intent = new Intent(ctx, ButtonReceiver.class);
+//            intent.putExtra(NOTIFICATION_KEY, model.id);
+//            intent.setData(Uri.parse(b.getAction()));
+//            intent.setAction(Intent.ACTION_VIEW);
+//            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
             intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse(b.getAction()));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -285,29 +307,29 @@ public class NotificationProvider {
 
             ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
 
-            if (model != null && model.type.equalsIgnoreCase("ad") && model.title.isEmpty()){
+            if (model != null && model.type.equalsIgnoreCase("ad") && model.title.isEmpty()) {
 
                 JSONObject payloadObj = new JSONObject();
-                payloadObj.put("notification",  new JSONObject(remoteMessage.getData()));
-                payloadObj.put("to", "https://fcm.googleapis.com/fcm/send/"+FeedSDK.getToken(context));
-                Request req= new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
+                payloadObj.put("notification", new JSONObject(remoteMessage.getData()));
+                payloadObj.put("to", "https://fcm.googleapis.com/fcm/send/" + FeedSDK.getToken(context));
+                Request req = new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
                     @Override
                     public void onResponse(Response resp) {
-                        if(!resp.isError()){
+                        if (!resp.isError()) {
                             Logs.d("Token sent!!! ");
                             String data = resp.getData();
                             try {
                                 JSONObject responseObject = new JSONObject(data);
                                 ModelNotification internalModel = ModelNotification.getInstance(responseObject);
-                                NotificationProvider np = new NotificationProvider(internalModel);
+                                NotificationProvider np = new NotificationProvider(internalModel, context);
                                 np.showNotification(context);
                             } catch (JSONException e) {
                                 e.printStackTrace();
                                 Log.d(TAG, "========================================================************============================");
-                                Log.d(TAG, "Exception: "+e.getMessage());
+                                Log.d(TAG, "Exception: " + e.getMessage());
                                 Log.d(TAG, "========================================================************============================");
                             }
-                        }else{
+                        } else {
                             Logs.e("That didn't work!");
                         }
                     }
@@ -316,14 +338,14 @@ public class NotificationProvider {
                 headers.put("Content-Type", "application/json; charset=UTF-8");
                 req.setHeaders(headers);
                 FeedNet.getInstance(context).executeRequest(req);
-            }else {
-                NotificationProvider np = new NotificationProvider(model);
+            } else {
+                NotificationProvider np = new NotificationProvider(model, context);
                 np.showNotification(context);
             }
         } catch (JSONException e) {
             e.printStackTrace();
             Log.d(TAG, "========================================================************============================");
-            Log.d(TAG, "Exception: "+e.getMessage());
+            Log.d(TAG, "Exception: " + e.getMessage());
             Log.d(TAG, "========================================================************============================");
 
         }
@@ -331,7 +353,7 @@ public class NotificationProvider {
 
     private static void createNotificationChannel(Context context, String channel_id, String channel_name, String channel_description, int importance) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            int importance1 = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance1 = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(channel_id, channel_name, importance1);
             channel.setDescription(channel_description);
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
@@ -341,15 +363,15 @@ public class NotificationProvider {
 
     /**
      * icon images
-     * @param name image name from push data
      *
+     * @param name image name from push data
      * @return image resource
      */
-    private int getActionIcon(String name){
-        if(name == null){
+    private int getActionIcon(String name) {
+        if (name == null) {
             return R.drawable.add;
         }
-        switch(name){
+        switch (name) {
             case "television-1":
                 return R.drawable.television_1;
             case "id-card-5":
@@ -1142,5 +1164,17 @@ public class NotificationProvider {
                 return R.drawable.speaker_6;
         }
         return R.drawable.add;
+    }
+
+    private static class ButtonReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int notificationId = intent.getIntExtra(NOTIFICATION_KEY, 0);
+
+            // if you want cancel notification
+            NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.cancel(notificationId);
+        }
     }
 }

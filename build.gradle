@@ -14,11 +14,11 @@ buildscript {
 }
 
 ext{
-    libVersionCode = 1
-    libVersionName = '1.0.0'
+    libVersionCode = 2
+    libVersionName = '1.0.1'
     PUBLISH_GROUP_ID = 'net.feedify.sdk.push'
     PUBLISH_ARTIFACT_ID = 'feedify-sdk'
-    PUBLISH_VERSION = '1.0.1'
+    PUBLISH_VERSION = '1.0.2'
     ossrhUsername = 'mdfani'
     ossrhPassword = '8gKy>UVSGC8g'
 }
@@ -30,8 +30,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
