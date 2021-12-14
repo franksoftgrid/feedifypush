@@ -42,24 +42,24 @@ public class FeedSDK extends Application {
 
     private static Context mContext;
 
-    public static void init(Context ctx){
-        FeedSDK.init(ctx,"Feedify");
+    public static void init(Context ctx) {
+        FeedSDK.init(ctx, "Feedify");
     }
 
-    public static void init(Context ctx,String appName){
+    public static void init(Context ctx, String appName) {
         mContext = ctx;
-       // Logs.setEnabled(BuildConfig.DEBUG);
+        // Logs.setEnabled(BuildConfig.DEBUG);
         Logs.setEnabled(false);
-        initializeApp(ctx,appName);
+        initializeApp(ctx, appName);
         Logs.i("ModelDeviceApp info...", true);
-        try{
+        try {
             ModelDeviceApp modelDeviceApp = ModelDeviceApp.getInstance(ctx);
             Logs.i("device_name", modelDeviceApp.device_name);
             Logs.i("device_uuid", modelDeviceApp.device_uuid);
             Logs.i("package_name", modelDeviceApp.package_name);
             Logs.i("app_name", modelDeviceApp.app_name);
             Logs.i("platform", modelDeviceApp.platform);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             Logs.e(ex.getMessage());
         }
 
@@ -68,7 +68,7 @@ public class FeedSDK extends Application {
     }
 
 
-    private static void initializeApp(@NonNull Context context,String appName) {
+    private static void initializeApp(@NonNull Context context, String appName) {
         try {
             ModelFirebaseApp modelFirebaseApp = ModelFirebaseApp.getInstance(context);
 
@@ -85,11 +85,11 @@ public class FeedSDK extends Application {
                     setApplicationId(modelFirebaseApp.mobilesdk_app_id).
                     setDatabaseUrl(modelFirebaseApp.firebase_url).
                     setGcmSenderId(modelFirebaseApp.project_number).
-                    setStorageBucket(modelFirebaseApp.storage_bucket).build(),appName);
+                    setStorageBucket(modelFirebaseApp.storage_bucket).build(), appName);
 
         } catch (GoogleServiceJsonException e) {
             e.printStackTrace();
-        }catch(Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }

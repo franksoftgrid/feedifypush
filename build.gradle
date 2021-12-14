@@ -9,29 +9,29 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.0'
+        classpath 'com.android.tools.build:gradle:4.2.1'
     }
 }
 
-ext{
-    libVersionCode = 2
-    libVersionName = '1.0.1'
+ext {
+    libVersionCode = 4
+    libVersionName = '1.0.4'
     PUBLISH_GROUP_ID = 'net.feedify.sdk.push'
     PUBLISH_ARTIFACT_ID = 'feedify-sdk'
-    PUBLISH_VERSION = '1.0.2'
+    PUBLISH_VERSION = '1.0.1'
     ossrhUsername = 'mdfani'
     ossrhPassword = '8gKy>UVSGC8g'
 }
 android {
     compileSdkVersion 29
-    buildToolsVersion "29.0.1"
+    buildToolsVersion "29.0.2"
 
 
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode 2
-        versionName "1.1"
+        versionCode 1
+        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

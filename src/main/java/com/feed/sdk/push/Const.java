@@ -1,7 +1,7 @@
 package com.feed.sdk.push;
 
 /**
- *  This class provided base url for library
+ * This class provided base url for library
  */
 public class Const {
     public static final String PUSH_REGISTER = "https://feedify.net/push/register";

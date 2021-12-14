@@ -1,7 +1,8 @@
 package com.feed.sdk.push.model;
 
 
-import com.google.firebase.messaging.RemoteMessage;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,7 +15,7 @@ import java.util.Map;
 /**
  * Class representation of Notification received from push
  */
-public class ModelNotification {
+public class ModelNotification implements Parcelable {
 
     public int id;
     public String title;
@@ -23,73 +24,105 @@ public class ModelNotification {
     public String image;
     public String url;
     public String type;
-    public ArrayList<ActionButton> actionButtons = new ArrayList<ActionButton>();
+    public ArrayList<ActionButton> actionButtons = new ArrayList<>();
     public Map<String, String> customParams = new HashMap();
-    public ArrayList<ActionButton> pushButtons = new ArrayList<ActionButton>();
+    public ArrayList<ActionButton> pushButtons = new ArrayList<>();
 
-//    public static ModelNotification getInstance(String jsonString) throws JSONException {
-//        JSONObject root = new JSONObject(jsonString);
-//        ModelNotification notification = new ModelNotification();
-//        notification.type = root.getString("type");
-//        notification.id = Integer.parseInt(root.getString("id"));
-//        notification.title = root.getString("title");
-//        notification.body = root.getString("body");
-//
-//        notification.url = root.getString("url");
-//        if (notification.url != null && notification.url.trim().isEmpty())
-//            notification.url = null;
-//        notification.icon = root.getString("icon");
-//        if (notification.icon != null && notification.icon.trim().isEmpty())
-//            notification.icon = null;
-//        notification.image = root.getString("image");
-//        if (notification.image != null && notification.image.trim().isEmpty())
-//            notification.image = null;
-//        try {
-//            JSONObject buttons = root.getJSONObject("button");
-//            try {
-//                JSONObject button1 = buttons.getJSONObject("button1");
-//                ActionButton button = new ActionButton();
-//                button.setAction(button1.getString("action"));
-//                button.setIcon(button1.getString("icon"));
-//                button.setTitle(button1.getString("title"));
-//                notification.actionButtons.add(button);
-//            } catch (Exception ex) {
-//
-//            }
-//            try {
-//                JSONObject button1 = buttons.getJSONObject("button2");
-//                ActionButton button = new ActionButton();
-//                button = new ActionButton();
-//                button.setAction(button1.getString("action"));
-//                button.setIcon(button1.getString("icon"));
-//                button.setTitle(button1.getString("title"));
-//                notification.actionButtons.add(button);
-//            } catch (Exception ex) {
-//
-//            }
-//
-//        } catch (Exception ex) {
-//
-//        }
-//
-//        try {
-//
-//            JSONArray params = root.getJSONArray("custom_params");
-//            notification.customParams = getCustomParams(params);
-//
-//        } catch (Exception ex) {
-//
-//        }
-//
-//        try {
-//            JSONArray params = root.getJSONArray("custom_params_btn");
-//            notification.pushButtons = getPushButtons(params);
-//
-//        } catch (Exception ex) {
-//        }
-//
-//        return notification;
-//    }
+    private static final String NEW_LINE = "\n";
+
+    protected ModelNotification(Parcel in) {
+        id = in.readInt();
+        title = in.readString();
+        body = in.readString();
+        icon = in.readString();
+        image = in.readString();
+        url = in.readString();
+        type = in.readString();
+        actionButtons = in.createTypedArrayList(ActionButton.CREATOR);
+        pushButtons = in.createTypedArrayList(ActionButton.CREATOR);
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            String key = in.readString();
+            String value = in.readString();
+            customParams.put(key, value);
+        }
+    }
+
+    public ModelNotification() {
+
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(id);
+        dest.writeString(title);
+        dest.writeString(body);
+        dest.writeString(icon);
+        dest.writeString(image);
+        dest.writeString(url);
+        dest.writeString(type);
+        dest.writeTypedList(actionButtons);
+        dest.writeTypedList(pushButtons);
+        dest.writeInt(customParams.size());
+        for (Map.Entry<String, String> entry : customParams.entrySet()) {
+            dest.writeString(entry.getKey());
+            dest.writeString(entry.getValue());
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<ModelNotification> CREATOR = new Creator<ModelNotification>() {
+        @Override
+        public ModelNotification createFromParcel(Parcel in) {
+            return new ModelNotification(in);
+        }
+
+        @Override
+        public ModelNotification[] newArray(int size) {
+            return new ModelNotification[size];
+        }
+    };
+
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("id :: " + id)
+                .append(NEW_LINE)
+                .append("title :: " + title).append(NEW_LINE)
+                .append("icon :: " + icon).append(NEW_LINE)
+                .append("image :: " + image).append(NEW_LINE)
+                .append("url :: " + url).append(NEW_LINE)
+                .append("type :: " + type).append(NEW_LINE);
+
+        stringBuilder.append("-----------start actionButton logs------------").append(NEW_LINE);
+        for (ActionButton actionBtn : actionButtons) {
+            stringBuilder.append("action :: " + actionBtn.getAction()).append(NEW_LINE)
+                    .append("title :: " + actionBtn.getTitle()).append(NEW_LINE)
+                    .append("icon :: " + actionBtn.getIcon()).append(NEW_LINE);
+
+        }
+        stringBuilder.append("-----------end actionButton logs------------").append(NEW_LINE);
+
+        stringBuilder.append("-----------start pushButton logs------------").append(NEW_LINE);
+        for (ActionButton pushButton : pushButtons) {
+            stringBuilder.append("action :: " + pushButton.getAction()).append(NEW_LINE)
+                    .append("title :: " + pushButton.getTitle()).append(NEW_LINE)
+                    .append("icon :: " + pushButton.getIcon()).append(NEW_LINE);
+
+        }
+        stringBuilder.append("-----------end pushButton logs------------").append(NEW_LINE);
+
+        stringBuilder.append("-----------start customParams logs------------").append(NEW_LINE);
+
+        stringBuilder.append(customParams.keySet().toString()).append(NEW_LINE);
+        stringBuilder.append(customParams.values()).append(NEW_LINE);
+        stringBuilder.append("-----------end customParams logs------------").append(NEW_LINE);
+
+        return stringBuilder.toString();
+    }
 
     private static ArrayList<ActionButton> getPushButtons(JSONArray params) throws JSONException {
         ArrayList<ActionButton> buttons = new ArrayList<>();
@@ -139,23 +172,23 @@ public class ModelNotification {
 //            return notification;
 //        }else{
 //        }
-        notification.type = getDataFromJson(root,"type");
+        notification.type = getDataFromJson(root, "type");
         notification.id = getIntDataFromJson(root, "id");
-        notification.title = getDataFromJson(root,"title");
-        notification.body = getDataFromJson(root,"body");
+        notification.title = getDataFromJson(root, "title");
+        notification.body = getDataFromJson(root, "body");
 
-        notification.url = getDataFromJson(root,"url");
+        notification.url = getDataFromJson(root, "url");
         if (notification.url != null && notification.url.trim().isEmpty())
             notification.url = null;
-        notification.icon = getDataFromJson(root,"icon");
+        notification.icon = getDataFromJson(root, "icon");
         if (notification.icon != null && notification.icon.trim().isEmpty())
             notification.icon = null;
-        notification.image = getDataFromJson(root,"image");
+        notification.image = getDataFromJson(root, "image");
         if (notification.image != null && notification.image.trim().isEmpty())
             notification.image = null;
 
         try {
-            String s =  getDataFromJson(root,"button");
+            String s = getDataFromJson(root, "button");
             JSONObject buttons = new JSONObject(s);
             try {
                 JSONObject button1 = buttons.getJSONObject("button1");
@@ -183,7 +216,7 @@ public class ModelNotification {
         }
 
         try {
-            String s = getDataFromJson(root,"custom_params");
+            String s = getDataFromJson(root, "custom_params");
             JSONArray params = new JSONArray(s);
             notification.customParams = getCustomParams(params);
         } catch (Exception ex) {
@@ -191,7 +224,7 @@ public class ModelNotification {
         }
 
         try {
-            String s = getDataFromJson(root,"custom_params_btn");
+            String s = getDataFromJson(root, "custom_params_btn");
             JSONArray params = new JSONArray(s);
             notification.pushButtons = getPushButtons(params);
 
@@ -201,11 +234,45 @@ public class ModelNotification {
         return notification;
     }
 
-    public static class ActionButton {
+    public static class ActionButton implements Parcelable {
         // final String BASE_BUTTON_URL="https://feedify.net/images/push/icons/";
         String title;
         String action;
         String icon = "";
+
+        public ActionButton() {
+
+        }
+
+        protected ActionButton(Parcel in) {
+            title = in.readString();
+            action = in.readString();
+            icon = in.readString();
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(title);
+            dest.writeString(action);
+            dest.writeString(icon);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        public static final Creator<ActionButton> CREATOR = new Creator<ActionButton>() {
+            @Override
+            public ActionButton createFromParcel(Parcel in) {
+                return new ActionButton(in);
+            }
+
+            @Override
+            public ActionButton[] newArray(int size) {
+                return new ActionButton[size];
+            }
+        };
 
         public String getTitle() {
             return title;
@@ -232,8 +299,8 @@ public class ModelNotification {
         }
     }
 
-    private static String getDataFromJson(JSONObject object, String key){
-        if (object.has(key)){
+    private static String getDataFromJson(JSONObject object, String key) {
+        if (object.has(key)) {
             try {
                 return object.getString(key);
             } catch (JSONException e) {
@@ -243,8 +310,8 @@ public class ModelNotification {
         return "";
     }
 
-    private static int getIntDataFromJson(JSONObject object, String key){
-        if (object.has(key)){
+    private static int getIntDataFromJson(JSONObject object, String key) {
+        if (object.has(key)) {
             try {
                 return object.getInt(key);
             } catch (JSONException e) {

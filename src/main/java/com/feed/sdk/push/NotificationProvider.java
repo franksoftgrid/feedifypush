@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -37,13 +36,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class NotificationProvider {
 
     private ModelNotification model;
     private static final String TAG = NotificationProvider.class.getName();
     public static final String NOTIFICATION_KEY = "notificationId";
-//    private ButtonReceiver buttonReceiver;
+    public static final String NOTIFICATION_DATA = "notificationData";
 
     /**
      * private constructor for internal use
@@ -81,18 +81,18 @@ public class NotificationProvider {
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
-
-        Log.d(TAG, "========================================================************============================");
-        Log.d(TAG, "Model Details: ");
-        Log.d(TAG, "Model id: " + model.id);
-        Log.d(TAG, "Model icon: " + model.icon);
-        Log.d(TAG, "Model image: " + model.image);
-        Log.d(TAG, "Model tile: " + model.title);
-        Log.d(TAG, "Model body: " + model.body);
-        Log.d(TAG, "========================================================************============================");
+        Logs.d(TAG, model.toString());
+//        Log.d(TAG, "========================================================************============================");
+//        Log.d(TAG, "Model Details: ");
+//        Log.d(TAG, "Model id: " + model.id);
+//        Log.d(TAG, "Model icon: " + model.icon);
+//        Log.d(TAG, "Model image: " + model.image);
+//        Log.d(TAG, "Model tile: " + model.title);
+//        Log.d(TAG, "Model body: " + model.body);
+//        Log.d(TAG, "========================================================************============================");
         PendingIntent pendingIntent = PendingIntent.getActivity(context, model.id, getIntent(context), PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
-        int i = 2500;
+        int i = getRandomNumber();
         // Add push buttons
 
         //Create an Intent for the BroadcastReceiver
@@ -134,6 +134,11 @@ public class NotificationProvider {
         }
 
 
+    }
+
+    private int getRandomNumber() {
+        Random rand = new Random();
+        return rand.nextInt(1000);
     }
 
 //    private void registerBroadCastReceiver(final Context context) {
@@ -250,13 +255,21 @@ public class NotificationProvider {
             for (String key : model.customParams.keySet()) {
                 intent.putExtra(key, model.customParams.get(key));
             }
+            intent.putExtra(NOTIFICATION_DATA, model);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             return intent;
         } else if (model.url != null) {
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(model.url));
+            Intent intent;
+            if (FeedSDK.activityClass != null) {
+                intent = new Intent(context, FeedSDK.activityClass);
+                intent.putExtra(NOTIFICATION_DATA, model);
+            } else {
+                intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(model.url));
+            }
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             return intent;
+
         } else {
             PackageManager pm = context.getPackageManager();
             Intent intent = pm.getLaunchIntentForPackage(context.getPackageName());
@@ -1164,17 +1177,5 @@ public class NotificationProvider {
                 return R.drawable.speaker_6;
         }
         return R.drawable.add;
-    }
-
-    private static class ButtonReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int notificationId = intent.getIntExtra(NOTIFICATION_KEY, 0);
-
-            // if you want cancel notification
-            NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.cancel(notificationId);
-        }
     }
 }

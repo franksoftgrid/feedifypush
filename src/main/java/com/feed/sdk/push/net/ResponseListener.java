@@ -1,7 +1,7 @@
 package com.feed.sdk.push.net;
 
 /**
- *  Interface to get response back from FeedNet
+ * Interface to get response back from FeedNet
  */
 public interface ResponseListener {
 

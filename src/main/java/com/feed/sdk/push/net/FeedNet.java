@@ -7,7 +7,6 @@ import android.net.ConnectivityManager;
 import android.os.Handler;
 import android.os.Looper;
 
-
 import com.feed.sdk.push.common.Logs;
 
 import java.io.BufferedReader;
@@ -41,7 +40,7 @@ public class FeedNet {
         return new FeedNet(ctx);
     }
 
-    public void downloadPush(){
+    public void downloadPush() {
 
     }
 
@@ -65,7 +64,7 @@ public class FeedNet {
 
     }
 
-    public Bitmap getImage(Request req){
+    public Bitmap getImage(Request req) {
         if (!isNetworkAvailable()) {
             return null;
         }
@@ -76,11 +75,11 @@ public class FeedNet {
             InputStream in = urlConn.getInputStream();
             Bitmap data = getBitmap(in);
             in.close();
-           return data;
+            return data;
 
         } catch (Exception ex) {
 
-           return null;
+            return null;
 
         }
     }
@@ -95,7 +94,7 @@ public class FeedNet {
             try {
                 // TODO: Add support for 301 and 302 redirect response.
                 int resCode = con.getResponseCode();
-                if ( resCode == 200 || resCode == 206 ) {
+                if (resCode == 200 || resCode == 206) {
                     InputStream in = con.getInputStream();
                     int code = con.getResponseCode();
                     String data = getData(in);
@@ -122,6 +121,7 @@ public class FeedNet {
 
     /**
      * Special get to get images
+     *
      * @param request
      */
     private void processGetImage(Request request) {
@@ -159,6 +159,7 @@ public class FeedNet {
 
     /**
      * Normal get request
+     *
      * @param request
      */
     private void processGet(Request request) {
@@ -204,6 +205,7 @@ public class FeedNet {
 
     /**
      * if network is availalbe
+     *
      * @return true if yes
      */
     public boolean isNetworkAvailable() {
@@ -213,6 +215,7 @@ public class FeedNet {
 
     /**
      * Post request
+     *
      * @param request
      */
     private void processPost(Request request) {

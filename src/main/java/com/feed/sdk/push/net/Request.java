@@ -6,13 +6,13 @@ import java.net.URLEncoder;
 import java.util.Map;
 
 /**
- *  Request class to represent a Request to FeedNet class
+ * Request class to represent a Request to FeedNet class
  */
 public class Request {
 
     public final static int REQUEST_GET = 0;
     public final static int REQUEST_POST = 1;
-    public final static int REQUEST_IMAGE =  2;
+    public final static int REQUEST_IMAGE = 2;
 
     private int method;
     private ResponseListener listener;
@@ -22,69 +22,69 @@ public class Request {
 
     private Map<String, String> headers;
 
-    public Request(String url, int method, Map<String, String> params, ResponseListener listener ){
+    public Request(String url, int method, Map<String, String> params, ResponseListener listener) {
         this.url = url;
         this.method = method;
         this.params = params;
         this.listener = listener;
     }
 
-    public Request(String url, int method, JSONObject params, ResponseListener listener ){
+    public Request(String url, int method, JSONObject params, ResponseListener listener) {
         this.url = url;
         this.method = method;
         this.paramsObject = params;
         this.listener = listener;
     }
 
-    public void setHeaders(Map<String,String> headers){
+    public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
     }
 
-    public Map<String,String> getHeaders(){
+    public Map<String, String> getHeaders() {
         return headers;
     }
 
-    public int getRequestMethod(){
+    public int getRequestMethod() {
         return method;
     }
 
-    public String getRequestHTTPMethod(){
+    public String getRequestHTTPMethod() {
 
-         switch(this.method){
-             case Request.REQUEST_GET:
-             case Request.REQUEST_IMAGE:
-                 return "GET";
+        switch (this.method) {
+            case Request.REQUEST_GET:
+            case Request.REQUEST_IMAGE:
+                return "GET";
 
 
-         }
+        }
         return "POST";
     }
 
-    public String getRequestUrl(){
+    public String getRequestUrl() {
         return this.url;
     }
 
-    private String getPostParams(){
-        String rtn="";
-        if (params != null){
-            for(String key:params.keySet()){
+    private String getPostParams() {
+        String rtn = "";
+        if (params != null) {
+            for (String key : params.keySet()) {
                 try {
-                    rtn+= URLEncoder.encode(key,"UTF-8")+"="+URLEncoder.encode(params.get(key),"UTF-8")+"&";
-                }catch(Exception e){
+                    rtn += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+                } catch (Exception e) {
                 }
             }
-        }else{
+        } else {
             rtn = paramsObject.toString();
         }
 
         return rtn;
     }
 
-    public String getPostData(){
+    public String getPostData() {
         return getPostParams();
     }
 
-    public ResponseListener getListener(){
+    public ResponseListener getListener() {
         return this.listener;
     }
 }
