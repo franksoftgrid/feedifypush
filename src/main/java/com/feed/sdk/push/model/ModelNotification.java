@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.feed.sdk.push.utils.TextUtils.NEW_LINE;
+
 /**
  * Class representation of Notification received from push
  */
@@ -27,8 +29,6 @@ public class ModelNotification implements Parcelable {
     public ArrayList<ActionButton> actionButtons = new ArrayList<>();
     public Map<String, String> customParams = new HashMap();
     public ArrayList<ActionButton> pushButtons = new ArrayList<>();
-
-    private static final String NEW_LINE = "\n";
 
     protected ModelNotification(Parcel in) {
         id = in.readInt();

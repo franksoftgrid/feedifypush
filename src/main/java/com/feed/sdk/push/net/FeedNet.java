@@ -24,7 +24,7 @@ import java.util.Set;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
- * Created by krish on 16/12/16. For internet purpose
+ * For API calling
  */
 public class FeedNet {
 
@@ -35,15 +35,12 @@ public class FeedNet {
         this.ctx = ctx;
     }
 
+    private FeedNet() {
+    }
 
     public static FeedNet getInstance(Context ctx) {
         return new FeedNet(ctx);
     }
-
-    public void downloadPush() {
-
-    }
-
 
     public void executeRequest(final Request request) {
         new Thread(new Runnable() {
@@ -82,41 +79,6 @@ public class FeedNet {
             return null;
 
         }
-    }
-
-    public String getHttpResponse(Request req) {
-        if (!isNetworkAvailable()) {
-            return null;
-        }
-
-        HttpURLConnection con = getHttpURLConnection(req);
-        if (con != null) {
-            try {
-                // TODO: Add support for 301 and 302 redirect response.
-                int resCode = con.getResponseCode();
-                if (resCode == 200 || resCode == 206) {
-                    InputStream in = con.getInputStream();
-                    int code = con.getResponseCode();
-                    String data = getData(in);
-
-                    return data;
-                } else {
-
-                    return null;
-                }
-            } catch (Exception ex) {
-
-                return null;
-
-            } finally {
-                try {
-                    if (con != null)
-                        con.disconnect();
-                } catch (Exception ex) {
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -181,7 +143,7 @@ public class FeedNet {
                     sendResponse(request.getListener(), resp);
                 } else {
 
-                    Response resp = new Response(true, "Invalid response code", "");
+                    Response resp = new Response(true, con.getResponseMessage(), String.valueOf(con.getResponseCode()));
                     sendResponse(request.getListener(), resp);
                 }
             } catch (Exception ex) {

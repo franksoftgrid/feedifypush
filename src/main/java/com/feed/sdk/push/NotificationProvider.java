@@ -30,10 +30,15 @@ import com.google.firebase.messaging.RemoteMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -42,8 +47,16 @@ public class NotificationProvider {
 
     private ModelNotification model;
     private static final String TAG = NotificationProvider.class.getName();
+    private static final String ADS_TAG = "AdsLog";
+
     public static final String NOTIFICATION_KEY = "notificationId";
     public static final String NOTIFICATION_DATA = "notificationData";
+
+    /**
+     * private constructor to stop initialising from outside the SDK
+     */
+    private NotificationProvider() {
+    }
 
     /**
      * private constructor for internal use
@@ -61,6 +74,7 @@ public class NotificationProvider {
     Notification notification;
 
     private void showNotification(final Context context) {
+        callNotificationReceivedApi(model, context);
         String feed_channel = "FEEDIFY_CHANNEL";
         try {
             createNotificationChannel(context, feed_channel, feed_channel, "Feed notification channel.", NotificationManager.IMPORTANCE_DEFAULT);
@@ -212,13 +226,6 @@ public class NotificationProvider {
             InputStream in;
 
             try {
-
-//                URL url = new URL(urlImage);
-//                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-//                connection.setDoInput(true);
-//                connection.connect();
-//                in = connection.getInputStream();
-//                image = BitmapFactory.decodeStream(in);
                 URL url = new URL(model.image);
                 image = BitmapFactory.decodeStream(url.openConnection().getInputStream());
                 return image;
@@ -237,8 +244,6 @@ public class NotificationProvider {
             builder.setLargeIcon(icon);
             if (image != null)
                 builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
-//            builder.setGroup("FEEDIFY");
-//            builder.setGroupSummary(true);
             notification = builder.build();
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             NotificationManagerCompat.from(ctx).notify(model.id, notification);
@@ -281,7 +286,6 @@ public class NotificationProvider {
     private Intent getButtonIntent(Context ctx, ModelNotification.ActionButton b) {
         Intent intent = new Intent(ctx, FeedSDKActionButton.ButtonReceiver.class);
         intent.putExtra(NOTIFICATION_KEY, model.id);
-//        Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(b.getAction()));
         intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -296,15 +300,8 @@ public class NotificationProvider {
                 intent.putExtra(key, model.customParams.get(key));
             }
             intent.putExtra(b.getTitle(), b.getAction());
-            // intent.setData(Uri.parse(b.getAction()));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         } else {
-//            intent = new Intent(ctx, ButtonReceiver.class);
-//            intent.putExtra(NOTIFICATION_KEY, model.id);
-//            intent.setData(Uri.parse(b.getAction()));
-//            intent.setAction(Intent.ACTION_VIEW);
-//            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
             intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse(b.getAction()));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -319,17 +316,17 @@ public class NotificationProvider {
             Log.d(TAG, "========================================================************============================");
 
             ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
-
-            if (model != null && model.type.equalsIgnoreCase("ad") && model.title.isEmpty()) {
-
+            if (model.type.equalsIgnoreCase("ad") && model.title.isEmpty()) {
+                Logs.d(ADS_TAG, "inside ad, fetching API...");
                 JSONObject payloadObj = new JSONObject();
                 payloadObj.put("notification", new JSONObject(remoteMessage.getData()));
                 payloadObj.put("to", "https://fcm.googleapis.com/fcm/send/" + FeedSDK.getToken(context));
                 Request req = new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
                     @Override
                     public void onResponse(Response resp) {
+                        Logs.d(ADS_TAG, "response received :: " + resp.getData());
                         if (!resp.isError()) {
-                            Logs.d("Token sent!!! ");
+                            Logs.d(ADS_TAG, "Token sent!!! ");
                             String data = resp.getData();
                             try {
                                 JSONObject responseObject = new JSONObject(data);
@@ -337,20 +334,24 @@ public class NotificationProvider {
                                 NotificationProvider np = new NotificationProvider(internalModel, context);
                                 np.showNotification(context);
                             } catch (JSONException e) {
+                                Logs.e(ADS_TAG, "json parsing exception occurred :: ");
                                 e.printStackTrace();
-                                Log.d(TAG, "========================================================************============================");
-                                Log.d(TAG, "Exception: " + e.getMessage());
-                                Log.d(TAG, "========================================================************============================");
+                                Log.d(ADS_TAG, "========================================================************============================");
+                                Log.d(ADS_TAG, "Exception: " + e.getMessage());
+                                Log.d(ADS_TAG, "========================================================************============================");
                             }
                         } else {
-                            Logs.e("That didn't work!");
+                            Logs.e(ADS_TAG, "That didn't work!");
                         }
                     }
                 });
                 Map<String, String> headers = new HashMap<>();
                 headers.put("Content-Type", "application/json; charset=UTF-8");
                 req.setHeaders(headers);
+                Logs.d(ADS_TAG, " ad API request params :: " + payloadObj.toString());
                 FeedNet.getInstance(context).executeRequest(req);
+            } else if (remoteMessage.getData().isEmpty()) {
+                new CallNotificationReceivedApi(0, "", CallNotificationReceivedApi.ApiCall.PAYLOAD_DATA, context).execute();
             } else {
                 NotificationProvider np = new NotificationProvider(model, context);
                 np.showNotification(context);
@@ -362,6 +363,19 @@ public class NotificationProvider {
             Log.d(TAG, "========================================================************============================");
 
         }
+    }
+
+    private static void callNotificationReceivedApi(final ModelNotification model, final Context context) {
+        new CallNotificationReceivedApi(model.id, model.type, CallNotificationReceivedApi.ApiCall.DELIVERY_COUNT, context).execute();
+    }
+
+    private static String getDeliveryCountUrlParams(int id, String type) {
+        try {
+            return "type=" + URLEncoder.encode(type, "UTF-8") + "&id=" + URLEncoder.encode(String.valueOf(id), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
     private static void createNotificationChannel(Context context, String channel_id, String channel_name, String channel_description, int importance) {
@@ -1177,5 +1191,78 @@ public class NotificationProvider {
                 return R.drawable.speaker_6;
         }
         return R.drawable.add;
+    }
+
+    private static class CallNotificationReceivedApi extends AsyncTask<Void, Void, Void> {
+        private final int id;
+        private final String type;
+        private final ApiCall apiCall;
+        private final Context context;
+
+        enum ApiCall {
+            DELIVERY_COUNT,
+            PAYLOAD_DATA
+        }
+
+        public CallNotificationReceivedApi(int id, String type, ApiCall apiCall, Context context) {
+            this.id = id;
+            this.type = type;
+            this.apiCall = apiCall;
+            this.context = context;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+                String query = "";
+                String url = "";
+                if (apiCall == ApiCall.DELIVERY_COUNT) {
+                    query = getDeliveryCountUrlParams(id, type);
+                    url = Const.DELIVERY_COUNT_API;
+                } else {
+                    query = getPayloadDataUrlParams(context);
+                    url = Const.PAYLOAD_DATA_API;
+                }
+                URLConnection connection = new URL(url + "?" + query).openConnection();
+                connection.setRequestProperty("Accept-Charset", "UTF-8");
+
+                InputStream response = connection.getInputStream();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(response));
+
+                String line = "";
+                String message = "";
+
+                while ((line = reader.readLine()) != null) {
+                    message += line;
+                }
+                if (apiCall == ApiCall.PAYLOAD_DATA) {
+                    ModelNotification model = ModelNotification.getInstance(new JSONObject(message));
+                    if (model.id != 0) {
+                        NotificationProvider np = new NotificationProvider(model, context);
+                        np.showNotification(context);
+                    }
+                }
+                Logs.d(TAG, message);
+
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        private String getPayloadDataUrlParams(Context context) {
+            try {
+                return "endpoint=" + URLEncoder.encode(FeedSDK.getToken(context), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            return "";
+        }
     }
 }

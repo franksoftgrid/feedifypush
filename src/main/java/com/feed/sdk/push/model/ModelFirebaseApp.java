@@ -12,6 +12,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+/**
+ * reads google-services.json file from app's root directory
+ */
 public class ModelFirebaseApp {
 
     private static final String TAG = "ModelFirebaseApp";
@@ -22,6 +25,8 @@ public class ModelFirebaseApp {
     public String firebase_url;
     public String storage_bucket;
 
+    private ModelFirebaseApp() {
+    }
 
     public static ModelFirebaseApp getInstance(Context context) throws GoogleServiceJsonException {
         try {

@@ -18,21 +18,28 @@ import com.feed.sdk.push.net.ResponseListener;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * used by SDK to register a device on Feedify server
+ */
 public class FeedRegisterManager {
-
-    public static final String SETTINGS_FILE_NAME = "push-settings.json";
-    public static final String KEY_PROJECT_INFO = "project_info";
+    // keys used for fetching values from build.gradle file
     public static final String KEY_USER = "feedify_user";
     public static final String KEY_DKEY = "feedify_dkey";
     public static final String KEY_DOMAIN = "feedify_domain";
 
     private Context context;
 
-    public FeedRegisterManager(Context context) {
+    private FeedRegisterManager(Context context) {
         this.context = context;
     }
 
-    public static void invoke(Context context) {
+    /**
+     * called by SDK only, to register a new device or when a new token is generated from Firebase,
+     * this will update the token to feedify server
+     *
+     * @param context - context used to access token saved in the preferences
+     */
+    static void invoke(Context context) {
         String token = Pref.get(context).getString(FeedMessagingService.FCM_TOKEN, null);
         if (token != null) {
             FeedRegisterManager fm = new FeedRegisterManager(context);
@@ -40,31 +47,23 @@ public class FeedRegisterManager {
         }
     }
 
-    public void register(final Context context, @NonNull final ModelDeviceApp modelDeviceApp, @NonNull final String token) {
+    /**
+     * called internally by SDK to fetch the feedify_domain, feedify_dkey and feedify_user values
+     * and register to feedify server
+     */
+    private void register(final Context context, @NonNull final ModelDeviceApp modelDeviceApp, @NonNull final String token) {
         String pushSettingsJson = null;
         int feedify_user = 0;
         String feedify_dkey = "";
         String feedify_domain = "";
 
         try {
-//            pushSettingsJson = Assets.textFileToString(context, SETTINGS_FILE_NAME);
-//
-//            JSONObject root = new JSONObject(pushSettingsJson);
-//            JSONObject project_info = root.getJSONObject(KEY_PROJECT_INFO);
-//
-//            feedify_user = project_info.getString(KEY_USER);
-//            feedify_dkey = project_info.getString(KEY_DKEY);
-//            feedify_domain = project_info.getString(KEY_DOMAIN);
-
             ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
             Bundle bundle = appInfo.metaData;
 
             if (bundle != null) {
                 if (bundle.containsKey(KEY_USER)) {
                     feedify_user = bundle.getInt(KEY_USER);
-//                    if (feedify_user == 0) {
-//                        feedify_user = String.valueOf(bundle.getInt("feedify_user"));
-//                    }
                 }
                 if (bundle.containsKey(KEY_DKEY)) {
                     feedify_dkey = bundle.getString(KEY_DKEY);
@@ -80,7 +79,7 @@ public class FeedRegisterManager {
         }
 
         if (!feedify_dkey.trim().isEmpty() && !feedify_dkey.trim().isEmpty() && !feedify_domain.isEmpty()) {
-            Logs.i("Registering token...", true);
+            Logs.i("Registering token...");
 
             final int finalFeedify_user = feedify_user;
             final String finalFeedify_dkey = feedify_dkey;
@@ -107,20 +106,7 @@ public class FeedRegisterManager {
                     }
                 }
             });
-          /*  MyData.put("token", token);
-            Request req1= new Request(Const.TOKEN_SAVE, Request.REQUEST_POST, MyData, new ResponseListener() {
-                @Override
-                public void onResponse(Response resp) {
-                    if(!resp.isError()){
-                        Logs.d("Token sent!!!", token);
-                    }else{
-                        Logs.d("That didn't work!");
-                    }
-                }
-            });*/
             FeedNet.getInstance(context).executeRequest(req);
-            // FeedNet.getInstance(context).executeRequest(req1);
-
         } else {
             Logs.d("Missing (feedify_user, feedify_dkey, feedify_domain) strings please make sure to update your feedify credentials in push-settings.json.");
         }

@@ -17,7 +17,14 @@ public class ModelDeviceApp {
     public String app_name = "";
     public String platform = "";
 
+    private ModelDeviceApp() {
+    }
 
+    /**
+     * returns ModelDeviceApp's object with values
+     *
+     * @return ModelDeviceApp
+     */
     public static ModelDeviceApp getInstance(Context context) {
         ModelDeviceApp modelDeviceApp = new ModelDeviceApp();
         Logs.i(" Model device app initialized starts");
@@ -30,6 +37,4 @@ public class ModelDeviceApp {
 
         return modelDeviceApp;
     }
-
-
 }

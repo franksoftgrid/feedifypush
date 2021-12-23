@@ -11,7 +11,7 @@
         </receiver>
         <activity
             android:name=".activity.FeedSDKActionButton"
-            android:exported="false"></activity>
+            android:exported="false" />
         <service
             android:name="com.feed.sdk.push.FeedMessagingService"
             android:exported="false">
