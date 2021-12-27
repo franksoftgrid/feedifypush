@@ -81,8 +81,9 @@ public class FeedNotificationDataManager {
                 while ((line = reader.readLine()) != null) {
                     message += line;
                 }
+                response.close();
+                reader.close();
                 Logs.d(TAG, message);
-
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();

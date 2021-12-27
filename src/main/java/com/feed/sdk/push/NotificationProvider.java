@@ -50,6 +50,7 @@ public class NotificationProvider {
     private static final String ADS_TAG = "AdsLog";
 
     public static final String NOTIFICATION_KEY = "notificationId";
+    public static final String NOTIFICATION_TYPE = "notificationType";
     public static final String NOTIFICATION_DATA = "notificationData";
 
     /**
@@ -104,7 +105,7 @@ public class NotificationProvider {
 //        Log.d(TAG, "Model tile: " + model.title);
 //        Log.d(TAG, "Model body: " + model.body);
 //        Log.d(TAG, "========================================================************============================");
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, model.id, getIntent(context), PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, model.id, getIntent(context), getPendingIntent());
         builder.setContentIntent(pendingIntent);
         int i = getRandomNumber();
         // Add push buttons
@@ -116,7 +117,7 @@ public class NotificationProvider {
 
         for (ModelNotification.ActionButton button : model.pushButtons) {
             if (!button.getTitle().equals("")) {
-                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context, button), getPendingIntent());
                 NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
                 builder.setAutoCancel(true);
                 builder.addAction(action);
@@ -129,7 +130,7 @@ public class NotificationProvider {
         if (model.pushButtons.size() < 2) {
             for (ModelNotification.ActionButton button : model.actionButtons) {
                 if (!button.getTitle().equals("")) {
-                    PendingIntent pi = PendingIntent.getBroadcast(context, i, getButtonIntent(context, button), PendingIntent.FLAG_UPDATE_CURRENT);
+                    PendingIntent pi = PendingIntent.getBroadcast(context, i, getButtonIntent(context, button), getPendingIntent());
                     NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
                     builder.setAutoCancel(true);
                     builder.addAction(action);
@@ -148,6 +149,14 @@ public class NotificationProvider {
         }
 
 
+    }
+
+    private int getPendingIntent() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            return PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
+        } else {
+            return PendingIntent.FLAG_UPDATE_CURRENT;
+        }
     }
 
     private int getRandomNumber() {
@@ -226,8 +235,10 @@ public class NotificationProvider {
             InputStream in;
 
             try {
-                URL url = new URL(model.image);
-                image = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                if (model.image != null && !model.image.isEmpty()) {
+                    URL url = new URL(model.image);
+                    image = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                }
                 return image;
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -286,6 +297,7 @@ public class NotificationProvider {
     private Intent getButtonIntent(Context ctx, ModelNotification.ActionButton b) {
         Intent intent = new Intent(ctx, FeedSDKActionButton.ButtonReceiver.class);
         intent.putExtra(NOTIFICATION_KEY, model.id);
+        intent.putExtra(NOTIFICATION_TYPE, model.type);
         intent.setData(Uri.parse(b.getAction()));
         intent.setAction(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
