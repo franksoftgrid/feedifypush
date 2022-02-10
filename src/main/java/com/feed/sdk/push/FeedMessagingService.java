@@ -24,6 +24,11 @@ public class FeedMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
+        Logs.d(TAG, "onMessageReceived :: " + " data :: " + remoteMessage.getData()
+                + " getMessageId :: " + remoteMessage.getMessageId() +
+                " getMessageType :: " + remoteMessage.getMessageType()
+                + " getFrom :: " + remoteMessage.getFrom() + " getTo :: " + remoteMessage.getTo()
+                + " getNotification :: " + remoteMessage.getNotification() + " getTtl :: " + remoteMessage.getTtl());
         if (FeedSDK.isEnabled()) {
             NotificationProvider.onMessageReceived(FeedMessagingService.this, remoteMessage);
         }

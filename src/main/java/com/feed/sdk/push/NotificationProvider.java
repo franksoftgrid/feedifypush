@@ -1,5 +1,7 @@
 package com.feed.sdk.push;
 
+import static com.feed.sdk.push.utils.AdUtil.isAd;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -52,6 +54,7 @@ public class NotificationProvider {
     public static final String NOTIFICATION_KEY = "notificationId";
     public static final String NOTIFICATION_TYPE = "notificationType";
     public static final String NOTIFICATION_DATA = "notificationData";
+    public static final String AD = "ad";
 
     /**
      * private constructor to stop initialising from outside the SDK
@@ -271,12 +274,14 @@ public class NotificationProvider {
             for (String key : model.customParams.keySet()) {
                 intent.putExtra(key, model.customParams.get(key));
             }
-            intent.putExtra(NOTIFICATION_DATA, model);
+            if (!isAd(model)) {
+                intent.putExtra(NOTIFICATION_DATA, model);
+            }
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             return intent;
         } else if (model.url != null) {
             Intent intent;
-            if (FeedSDK.activityClass != null) {
+            if (FeedSDK.activityClass != null && !isAd(model)) {
                 intent = new Intent(context, FeedSDK.activityClass);
                 intent.putExtra(NOTIFICATION_DATA, model);
             } else {
@@ -328,7 +333,7 @@ public class NotificationProvider {
             Log.d(TAG, "========================================================************============================");
 
             ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
-            if (model.type.equalsIgnoreCase("ad") && model.title.isEmpty()) {
+            if (isAd(model) && model.title.isEmpty()) {
                 Logs.d(ADS_TAG, "inside ad, fetching API...");
                 JSONObject payloadObj = new JSONObject();
                 payloadObj.put("notification", new JSONObject(remoteMessage.getData()));
@@ -336,7 +341,7 @@ public class NotificationProvider {
                 Request req = new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
                     @Override
                     public void onResponse(Response resp) {
-                        Logs.d(ADS_TAG, "response received :: " + resp.getData());
+                        Logs.d(ADS_TAG, "ads response received :: " + resp.getData());
                         if (!resp.isError()) {
                             Logs.d(ADS_TAG, "Token sent!!! ");
                             String data = resp.getData();
