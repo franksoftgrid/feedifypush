@@ -94,7 +94,7 @@ public class FeedRegisterManager {
             MyData.put("domkey", finalFeedify_dkey);
             MyData.put("referrer", finalFeedify_domain);
             MyData.put("browser", "Android Application");
-            MyData.put("uuid", modelDeviceApp.device_uuid);
+            MyData.put("uuid", modelDeviceApp.getDevice_uuid());
 
             Request req = new Request(Const.PUSH_REGISTER, Request.REQUEST_POST, MyData, new ResponseListener() {
                 @Override

@@ -25,6 +25,7 @@ public class FeedSDK extends Application {
     protected static Class activityClass;
     protected static @DrawableRes
     int notificationIcon = R.drawable.ic_notification;
+    public static String mAppName = "";
 
     /**
      * sets the activity that needs to be started on click of the notification, and when set, passes all
@@ -71,14 +72,14 @@ public class FeedSDK extends Application {
      */
     public static void init(Context ctx, String appName) {
         mContext = ctx;
+        mAppName = appName;
         // Logs.setEnabled(BuildConfig.DEBUG);
-        Logs.setEnabled(false);
         initializeApp(ctx, appName);
         Logs.i("ModelDeviceApp info...");
         try {
             ModelDeviceApp modelDeviceApp = ModelDeviceApp.getInstance(ctx);
             Logs.i("device_name", modelDeviceApp.device_name);
-            Logs.i("device_uuid", modelDeviceApp.device_uuid);
+            Logs.i("device_uuid", modelDeviceApp.getDevice_uuid());
             Logs.i("package_name", modelDeviceApp.package_name);
             Logs.i("app_name", modelDeviceApp.app_name);
             Logs.i("platform", modelDeviceApp.platform);
