@@ -13,6 +13,7 @@ import com.feed.sdk.push.model.ModelDeviceApp;
 import com.feed.sdk.push.model.ModelFirebaseApp;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 /**
  * entry point for SDK, this class contains all the configuration related methods that needs
@@ -74,7 +75,7 @@ public class FeedSDK extends Application {
         mContext = ctx;
         mAppName = appName;
         // Logs.setEnabled(BuildConfig.DEBUG);
-        initializeApp(ctx, appName);
+//        initializeApp(ctx, appName);
         Logs.i("ModelDeviceApp info...");
         try {
             ModelDeviceApp modelDeviceApp = ModelDeviceApp.getInstance(ctx);
@@ -87,7 +88,7 @@ public class FeedSDK extends Application {
             Logs.e(ex.getMessage());
         }
 
-
+        saveToken(ctx);
         FeedRegisterManager.invoke(ctx);
     }
 
@@ -115,6 +116,11 @@ public class FeedSDK extends Application {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+
+    private static void saveToken(Context context) {
+        final String token = FirebaseInstanceId.getInstance().getToken();
+        Pref.get(context).put(FeedMessagingService.FCM_TOKEN, token);
     }
 
     /**

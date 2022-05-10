@@ -8,12 +8,12 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 
 import com.feed.sdk.push.common.Logs;
-import com.feed.sdk.push.common.Pref;
 import com.feed.sdk.push.model.ModelDeviceApp;
 import com.feed.sdk.push.net.FeedNet;
 import com.feed.sdk.push.net.Request;
 import com.feed.sdk.push.net.Response;
 import com.feed.sdk.push.net.ResponseListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +40,7 @@ public class FeedRegisterManager {
      * @param context - context used to access token saved in the preferences
      */
     static void invoke(Context context) {
-        String token = Pref.get(context).getString(FeedMessagingService.FCM_TOKEN, null);
+        final String token = FirebaseInstanceId.getInstance().getToken();
         if (token != null) {
             FeedRegisterManager fm = new FeedRegisterManager(context);
             fm.register(context, ModelDeviceApp.getInstance(context), token);
