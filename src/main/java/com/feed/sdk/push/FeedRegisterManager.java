@@ -13,7 +13,7 @@ import com.feed.sdk.push.net.FeedNet;
 import com.feed.sdk.push.net.Request;
 import com.feed.sdk.push.net.Response;
 import com.feed.sdk.push.net.ResponseListener;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,11 +40,15 @@ public class FeedRegisterManager {
      * @param context - context used to access token saved in the preferences
      */
     static void invoke(Context context) {
-        final String token = FirebaseInstanceId.getInstance().getToken();
-        if (token != null) {
-            FeedRegisterManager fm = new FeedRegisterManager(context);
-            fm.register(context, ModelDeviceApp.getInstance(context), token);
-        }
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (task.isComplete()) {
+                String token = task.getResult();
+                if (token != null) {
+                    FeedRegisterManager fm = new FeedRegisterManager(context);
+                    fm.register(context, ModelDeviceApp.getInstance(context), token);
+                }
+            }
+        });
     }
 
     /**
