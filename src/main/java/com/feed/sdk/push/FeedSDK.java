@@ -13,7 +13,7 @@ import com.feed.sdk.push.model.ModelDeviceApp;
 import com.feed.sdk.push.model.ModelFirebaseApp;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 /**
  * entry point for SDK, this class contains all the configuration related methods that needs
@@ -119,8 +119,14 @@ public class FeedSDK extends Application {
     }
 
     private static void saveToken(Context context) {
-        final String token = FirebaseInstanceId.getInstance().getToken();
-        Pref.get(context).put(FeedMessagingService.FCM_TOKEN, token);
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (task.isComplete()) {
+                String token = task.getResult();
+                if (token != null) {
+                    Pref.get(context).put(FeedMessagingService.FCM_TOKEN, token);
+                }
+            }
+        });
     }
 
     /**

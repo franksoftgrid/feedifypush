@@ -9,29 +9,28 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.android.tools.build:gradle:8.0.0'
     }
 }
 
 ext {
     libVersionCode = 8
     libVersionName = '1.0.8'
-    PUBLISH_GROUP_ID = 'net.feedify.sdk.push'
-    PUBLISH_ARTIFACT_ID = 'feedify-sdk'
-    PUBLISH_VERSION = '1.0.6'
-    ossrhUsername = 'mdfani'
-    ossrhPassword = '8gKy>UVSGC8g'
+    PUBLISH_GROUP_ID = 'com.github.com.abduldblogger'
+    PUBLISH_ARTIFACT_ID = 'https://github.com/franksoftgrid/feedifypush'
+    PUBLISH_VERSION = '1.0.9'
 }
 android {
-    compileSdk 33
-    buildToolsVersion '33.0.0'
+    compileSdkVersion 33
+    buildToolsVersion "33.0.2"
+    namespace 'com.feed.sdk.push'
 
 
     defaultConfig {
-        minSdkVersion 16
+        minSdk 16
         targetSdk 33
-        versionCode 7
-        versionName "1.0.7"
+        versionCode libVersionCode
+        versionName libVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -43,7 +42,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
@@ -58,88 +60,26 @@ dependencies {
     }
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.preference:preference:1.2.1"
-    implementation "com.google.firebase:firebase-messaging:23.3.1"
+//    implementation "com.google.firebase:firebase-messaging:23.3.1"
+// Import the Firebase BoM (see: https://firebase.google.com/docs/android/learn-more#bom)
+    implementation(platform("com.google.firebase:firebase-bom:32.5.0"))
 
+    // Firebase Cloud Messaging
+    implementation("com.google.firebase:firebase-messaging")
     api 'com.github.bumptech.glide:glide:4.16.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 
 }
-/*
-apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'
-
 publishing {
     publications {
         release(MavenPublication) {
-            // The coordinates of the library, being set from variables that
-            // we'll set up in a moment
-            groupId PUBLISH_GROUP_ID
-            artifactId PUBLISH_ARTIFACT_ID
-            version PUBLISH_VERSION
+            groupId = PUBLISH_GROUP_ID
+            artifactId = PUBLISH_ARTIFACT_ID
+            version = PUBLISH_VERSION
 
-            // Two artifacts, the `aar` and the sources
-            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-            artifact androidSourcesJar
-
-            // Self-explanatory metadata for the most part
-            pom {
-                name = PUBLISH_ARTIFACT_ID
-                description = 'Feedify push notification SDK'
-                // If your project has a dedicated site, use its URL here
-                url = 'http://app.feedify.net'
-                licenses {
-                    license {
-                        name = 'GNU LESSER GENERAL PUBLIC LICENSE'
-                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'feedify'
-                        name = 'Feedify'
-                        email = 'info@feedify.net'
-                    }
-                }
-                // Version control info, if you're using GitHub, follow the format as seen here
-                scm {
-                    connection = 'scm:git@github.com:franksoftgrid/feedifypush.git'
-                    //git@github.com:franksoftgrid/franksoftgrid.git
-                    developerConnection = 'scm:git:ssh://github.com/franksoftgrid/franksoftgrid.git'
-                    url = 'https://github.com/franksoftgrid/feedifypush'
-                }
-            }
-        }
-    }
-    repositories {
-        // The repository to publish to, Sonatype/MavenCentral
-        maven {
-            // This is an arbitrary name, you may also use "mavencentral" or
-            // any other name that's descriptive for you
-            name = "sonatype"
-
-            //https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/net/feedify/sdk/push/feedify-sdk/
-            def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-            // You only need this if you want to publish snapshots, otherwise just set the URL
-            // to the release repo directly
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-
-            // The username and password we've fetched earlier
-            credentials {
-                username ossrhUsername
-                password ossrhPassword
+            afterEvaluate {
+                println("Components: " + components*.name)
             }
         }
     }
 }
-
-//signing.keyId = '762A9556'
-//signing.password = '8gKy>UVSGC'
-//signing.secretKeyRingFile = '/Users/satheesh/Downloads/762A9556.asc'
-
-ext["signing.keyId"] = 'CFB03A5F'
-ext["signing.password"] = '8gKy>UVSGC'
-ext["signing.secretKeyRingFile"] = '/Users/satheesh/Downloads/CFB03A5F.gpg'
-
-signing {
-    sign publishing.publications
-}*/
