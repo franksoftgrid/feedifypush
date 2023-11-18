@@ -18,7 +18,7 @@ ext {
     libVersionName = '1.0.8'
     PUBLISH_GROUP_ID = 'net.feedify.sdk.push'
     PUBLISH_ARTIFACT_ID = 'feedify-sdk'
-    PUBLISH_VERSION = '1.0.9'
+    PUBLISH_VERSION = '1.0.11'
 }
 android {
     compileSdkVersion 33
