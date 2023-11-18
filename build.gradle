@@ -1,6 +1,5 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
-apply plugin: 'signing'
 
 ext {
     libVersionCode = 14
@@ -46,11 +45,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
+//    publishing {
+//        singleVariant("release") {
+//            withSourcesJar()
+//        }
+//    }
     defaultConfig {
         aarMetadata {
             minCompileSdk = 30
@@ -92,13 +91,11 @@ afterEvaluate {
                 groupId = PUBLISH_GROUP_ID
                 artifactId = PUBLISH_ARTIFACT_ID
                 version = PUBLISH_VERSION
-                from components.release
             }
             debug(MavenPublication) {
                 groupId = PUBLISH_GROUP_ID
                 artifactId = PUBLISH_ARTIFACT_ID
                 version = PUBLISH_VERSION
-                from components.release
             }
         }
     }
