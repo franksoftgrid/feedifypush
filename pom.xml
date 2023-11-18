@@ -4,6 +4,6 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.abduldblogger</groupId>
     <artifactId>feedify-sdk</artifactId>
-    <version>1.0.15</version>
+    <version>1.0.16</version>
     <packaging>pom</packaging>
 </project>
