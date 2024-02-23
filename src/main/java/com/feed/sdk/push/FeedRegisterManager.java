@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -45,7 +47,10 @@ public class FeedRegisterManager {
                 String token = task.getResult();
                 if (token != null) {
                     FeedRegisterManager fm = new FeedRegisterManager(context);
+
+
                     fm.register(context, ModelDeviceApp.getInstance(context), token);
+
                 }
             }
         });
@@ -100,13 +105,32 @@ public class FeedRegisterManager {
             MyData.put("browser", "Android Application");
             MyData.put("uuid", modelDeviceApp.getDevice_uuid());
 
+
+
+
+
+
+
+            //Toast.makeText(context , "" ,Toast.LENGTH_LONG).show();
+
             Request req = new Request(Const.PUSH_REGISTER, Request.REQUEST_POST, MyData, new ResponseListener() {
                 @Override
                 public void onResponse(Response resp) {
+
+
+
+
+                    ;
+
+
                     if (!resp.isError()) {
+
                         Logs.d("Token sent!!! " + token);
+
+
                     } else {
                         Logs.e("That didn't work!");
+
                     }
                 }
             });

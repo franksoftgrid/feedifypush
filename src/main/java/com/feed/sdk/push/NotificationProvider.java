@@ -118,9 +118,9 @@ public class NotificationProvider {
 //        buttonIntent.putExtra("notificationId", model.id);
 
 
-        for (ModelNotification.ActionButton button : model.pushButtons) {
+        for (ModelNotification.ActionButton button : model.actionButtons) {
             if (!button.getTitle().equals("")) {
-                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context, button), getPendingIntent());
+                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent2(context, button), getPendingIntent());
                 NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
                 builder.setAutoCancel(true);
                 builder.addAction(action);
@@ -128,6 +128,7 @@ public class NotificationProvider {
             }
         }
         int pushButtonCount = model.pushButtons.size();
+
 
         // If push buttons are less than two and there are actions buttons add those
         if (model.pushButtons.size() < 2) {
@@ -326,18 +327,37 @@ public class NotificationProvider {
         return intent;
     }
 
+
+    private Intent getPushButtonIntent2(Context ctx, ModelNotification.ActionButton b) {
+        Intent intent = null;
+        intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(b.getAction()));
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        return intent;
+    }
     public static void onMessageReceived(final Context context, RemoteMessage remoteMessage) {
         try {
             Log.d(TAG, "========================================================************============================");
-            Log.d(TAG, "Inside onMessage received");
+            Log.d(TAG, "Inside onMessage received " );
             Log.d(TAG, "========================================================************============================");
 
-            ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
+            Map<String ,String>   jsonDataStr = remoteMessage.getData();
+
+
+            ModelNotification model = ModelNotification.getInstance(new JSONObject(jsonDataStr));
+
+
+
+
             if (isAd(model) && model.title.isEmpty()) {
                 Logs.d(ADS_TAG, "inside ad, fetching API...");
                 JSONObject payloadObj = new JSONObject();
-                payloadObj.put("notification", new JSONObject(remoteMessage.getData()));
+                payloadObj.put("notification", new JSONObject(jsonDataStr));
                 payloadObj.put("to", "https://fcm.googleapis.com/fcm/send/" + FeedSDK.getToken(context));
+
+               Log.e(ADS_TAG , payloadObj.toString());
+                Log.e(ADS_TAG , Const.FETCH_AD);
+
                 Request req = new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
                     @Override
                     public void onResponse(Response resp) {
@@ -1221,7 +1241,8 @@ public class NotificationProvider {
             PAYLOAD_DATA
         }
 
-        public CallNotificationReceivedApi(int id, String type, ApiCall apiCall, Context context) {
+        public CallNotificationReceivedApi(int id, String type, ApiCall apiCall, Context context)
+        {
             this.id = id;
             this.type = type;
             this.apiCall = apiCall;
@@ -1240,6 +1261,7 @@ public class NotificationProvider {
                     query = getPayloadDataUrlParams(context);
                     url = Const.PAYLOAD_DATA_API;
                 }
+
                 URLConnection connection = new URL(url + "?" + query).openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
 
@@ -1253,6 +1275,8 @@ public class NotificationProvider {
                 while ((line = reader.readLine()) != null) {
                     message += line;
                 }
+
+
                 if (apiCall == ApiCall.PAYLOAD_DATA) {
                     ModelNotification model = ModelNotification.getInstance(new JSONObject(message));
                     if (model.id != 0) {

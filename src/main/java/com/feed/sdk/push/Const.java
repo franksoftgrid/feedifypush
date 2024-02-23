@@ -1,5 +1,6 @@
 package com.feed.sdk.push;
 
+
 /**
  * This class provided constants for library, like preferences key and API endpoints
  */
@@ -10,4 +11,6 @@ public class Const {
     public static final String DELIVERY_COUNT_API = "https://deliver.feedify.net/deliveryCount";
     public static final String PAYLOAD_DATA_API = "https://deliver.feedify.net/deliver";
     public static final String CLICK_API = "https://deliver.feedify.net/click";
+
+
 }
