@@ -31,7 +31,7 @@ public class FeedRegisterManager {
 
     private Context context;
 
-    private FeedRegisterManager(Context context) {
+    FeedRegisterManager(Context context) {
         this.context = context;
     }
 
@@ -60,7 +60,7 @@ public class FeedRegisterManager {
      * called internally by SDK to fetch the feedify_domain, feedify_dkey and feedify_user values
      * and register to feedify server
      */
-    private void register(final Context context, @NonNull final ModelDeviceApp modelDeviceApp, @NonNull final String token) {
+    void register(final Context context, @NonNull final ModelDeviceApp modelDeviceApp, @NonNull final String token) {
         String pushSettingsJson = null;
         int feedify_user = 0;
         String feedify_dkey = "";
@@ -93,17 +93,23 @@ public class FeedRegisterManager {
             final int finalFeedify_user = feedify_user;
             final String finalFeedify_dkey = feedify_dkey;
             final String finalFeedify_domain = feedify_domain;
+            final String projectId = FirebaseApp.getInstance().getOptions().getProjectId();
+            final String fcmEndpoint = "https://fcm.googleapis.com/v1/projects" + projectId + "/messages:send/";
+
 
             // From here
             Map<String, String> MyData = new HashMap<String, String>();
             MyData.put("agent", "Feedify Android Application 1.0");
             MyData.put("endpoint", "https://fcm.googleapis.com/fcm/send/" + token);
+            MyData.put("endpoint", fcmEndpoint + token);
             MyData.put("registration_id", token);
             MyData.put("user_id", String.valueOf(finalFeedify_user));
             MyData.put("domkey", finalFeedify_dkey);
             MyData.put("referrer", finalFeedify_domain);
             MyData.put("browser", "Android Application");
-            MyData.put("uuid", modelDeviceApp.getDevice_uuid());
+            final String UUid = modelDeviceApp.getDevice_uuid();
+            MyData.put("uuid", UUid);
+            Logs.d("uuid", UUid);
 
 
 

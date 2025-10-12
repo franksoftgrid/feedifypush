@@ -2,6 +2,7 @@ package com.feed.sdk.push;
 
 import android.app.Application;
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -90,8 +91,12 @@ public class FeedSDK extends Application {
             Logs.e(ex.getMessage());
         }
 
-        saveToken(ctx);
-        FeedRegisterManager.invoke(ctx);
+        try {
+            saveToken(ctx);
+            FeedRegisterManager.invoke(ctx);
+        } catch (IllegalStateException ex) {
+            Log.e(TAG, ex.getMessage());
+        }
     }
 
     private static void initializeApp(@NonNull Context context, String appName) {
@@ -121,15 +126,11 @@ public class FeedSDK extends Application {
     }
 
     private static void saveToken(Context context) {
-
-
         FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
             if (task.isComplete()) {
                 String token = task.getResult();
-
-
+                Logs.i("token", token);
                 if (token != null) {
-
                     Pref.get(context).put(FeedMessagingService.FCM_TOKEN, token);
                 }
             }
