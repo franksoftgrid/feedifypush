@@ -2,6 +2,7 @@ package com.feed.sdk.push;
 
 import static com.feed.sdk.push.utils.AdUtil.isAd;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -17,6 +18,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -83,9 +85,9 @@ public class NotificationProvider {
         try {
             createNotificationChannel(context, feed_channel, feed_channel, "Feed notification channel.", NotificationManager.IMPORTANCE_DEFAULT);
         } catch (Exception ex) {
-            Log.d(TAG, "========================================================************============================");
-            Log.d(TAG, "Notification shown success: ");
-            Log.d(TAG, "========================================================************============================");
+            Log.e(TAG, "========================================================************============================");
+            Log.e(TAG, "Notification exception: ");
+            Log.e(TAG, "========================================================************============================");
         }
         Log.d(TAG, "========================================================************============================");
         Log.d(TAG, "Inside showNotification");
@@ -118,9 +120,9 @@ public class NotificationProvider {
 //        buttonIntent.putExtra("notificationId", model.id);
 
 
-        for (ModelNotification.ActionButton button : model.actionButtons) {
+        for (ModelNotification.ActionButton button : model.pushButtons) {
             if (!button.getTitle().equals("")) {
-                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent2(context, button), getPendingIntent());
+                PendingIntent pi = PendingIntent.getActivity(context, model.id, getPushButtonIntent(context, button), getPendingIntent());
                 NotificationCompat.Action action = new NotificationCompat.Action.Builder(getActionIcon(button.getIcon()), button.getTitle(), pi).build();
                 builder.setAutoCancel(true);
                 builder.addAction(action);
@@ -128,7 +130,6 @@ public class NotificationProvider {
             }
         }
         int pushButtonCount = model.pushButtons.size();
-
 
         // If push buttons are less than two and there are actions buttons add those
         if (model.pushButtons.size() < 2) {
@@ -245,9 +246,9 @@ public class NotificationProvider {
                 }
                 return image;
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Notification image fetch exception: MalformedURLException :: " + e.getMessage());
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "Notification image fetch exception: IOException :: " + e.getMessage());
             }
             return null;
         }
@@ -261,11 +262,16 @@ public class NotificationProvider {
                 builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image));
             notification = builder.build();
             notification.flags = Notification.FLAG_AUTO_CANCEL;
-            NotificationManagerCompat.from(ctx).notify(model.id, notification);
-            Log.d(TAG, "========================================================************============================");
-            Log.d(TAG, "Notification shown success: ");
-            Log.d(TAG, "========================================================************============================");
-
+            if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "========================================================************============================");
+                Log.d(TAG, "Notification permissions not granted ");
+                Log.d(TAG, "========================================================************============================");
+            } else {
+                NotificationManagerCompat.from(ctx).notify(model.id, notification);
+                Log.d(TAG, "========================================================************============================");
+                Log.d(TAG, "Notification shown success: ");
+                Log.d(TAG, "========================================================************============================");
+            }
         }
     }
 
@@ -327,37 +333,18 @@ public class NotificationProvider {
         return intent;
     }
 
-
-    private Intent getPushButtonIntent2(Context ctx, ModelNotification.ActionButton b) {
-        Intent intent = null;
-        intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse(b.getAction()));
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        return intent;
-    }
     public static void onMessageReceived(final Context context, RemoteMessage remoteMessage) {
         try {
             Log.d(TAG, "========================================================************============================");
-            Log.d(TAG, "Inside onMessage received " );
+            Log.d(TAG, "Inside onMessage received");
             Log.d(TAG, "========================================================************============================");
 
-            Map<String ,String>   jsonDataStr = remoteMessage.getData();
-
-
-            ModelNotification model = ModelNotification.getInstance(new JSONObject(jsonDataStr));
-
-
-
-
+            ModelNotification model = ModelNotification.getInstance(new JSONObject(remoteMessage.getData()));
             if (isAd(model) && model.title.isEmpty()) {
                 Logs.d(ADS_TAG, "inside ad, fetching API...");
                 JSONObject payloadObj = new JSONObject();
-                payloadObj.put("notification", new JSONObject(jsonDataStr));
+                payloadObj.put("notification", new JSONObject(remoteMessage.getData()));
                 payloadObj.put("to", "https://fcm.googleapis.com/fcm/send/" + FeedSDK.getToken(context));
-
-               Log.e(ADS_TAG , payloadObj.toString());
-                Log.e(ADS_TAG , Const.FETCH_AD);
-
                 Request req = new Request(Const.FETCH_AD, Request.REQUEST_POST, payloadObj, new ResponseListener() {
                     @Override
                     public void onResponse(Response resp) {
@@ -1241,8 +1228,7 @@ public class NotificationProvider {
             PAYLOAD_DATA
         }
 
-        public CallNotificationReceivedApi(int id, String type, ApiCall apiCall, Context context)
-        {
+        public CallNotificationReceivedApi(int id, String type, ApiCall apiCall, Context context) {
             this.id = id;
             this.type = type;
             this.apiCall = apiCall;
@@ -1261,7 +1247,6 @@ public class NotificationProvider {
                     query = getPayloadDataUrlParams(context);
                     url = Const.PAYLOAD_DATA_API;
                 }
-
                 URLConnection connection = new URL(url + "?" + query).openConnection();
                 connection.setRequestProperty("Accept-Charset", "UTF-8");
 
@@ -1275,8 +1260,6 @@ public class NotificationProvider {
                 while ((line = reader.readLine()) != null) {
                     message += line;
                 }
-
-
                 if (apiCall == ApiCall.PAYLOAD_DATA) {
                     ModelNotification model = ModelNotification.getInstance(new JSONObject(message));
                     if (model.id != 0) {

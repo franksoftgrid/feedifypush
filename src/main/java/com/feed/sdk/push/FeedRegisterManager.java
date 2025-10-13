@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -15,6 +13,7 @@ import com.feed.sdk.push.net.FeedNet;
 import com.feed.sdk.push.net.Request;
 import com.feed.sdk.push.net.Response;
 import com.feed.sdk.push.net.ResponseListener;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.HashMap;
@@ -47,10 +46,7 @@ public class FeedRegisterManager {
                 String token = task.getResult();
                 if (token != null) {
                     FeedRegisterManager fm = new FeedRegisterManager(context);
-
-
                     fm.register(context, ModelDeviceApp.getInstance(context), token);
-
                 }
             }
         });
@@ -87,7 +83,7 @@ public class FeedRegisterManager {
             Logs.e("Push-settings.json file in missing from assets folder.");
         }
 
-        if (!feedify_dkey.trim().isEmpty() && !feedify_dkey.trim().isEmpty() && !feedify_domain.isEmpty()) {
+        if (feedify_user != 0 && !feedify_dkey.trim().isEmpty() && !feedify_domain.trim().isEmpty()) {
             Logs.i("Registering token...");
 
             final int finalFeedify_user = feedify_user;
@@ -96,11 +92,9 @@ public class FeedRegisterManager {
             final String projectId = FirebaseApp.getInstance().getOptions().getProjectId();
             final String fcmEndpoint = "https://fcm.googleapis.com/v1/projects" + projectId + "/messages:send/";
 
-
             // From here
             Map<String, String> MyData = new HashMap<String, String>();
             MyData.put("agent", "Feedify Android Application 1.0");
-            MyData.put("endpoint", "https://fcm.googleapis.com/fcm/send/" + token);
             MyData.put("endpoint", fcmEndpoint + token);
             MyData.put("registration_id", token);
             MyData.put("user_id", String.valueOf(finalFeedify_user));
@@ -111,32 +105,13 @@ public class FeedRegisterManager {
             MyData.put("uuid", UUid);
             Logs.d("uuid", UUid);
 
-
-
-
-
-
-
-            //Toast.makeText(context , "" ,Toast.LENGTH_LONG).show();
-
             Request req = new Request(Const.PUSH_REGISTER, Request.REQUEST_POST, MyData, new ResponseListener() {
                 @Override
                 public void onResponse(Response resp) {
-
-
-
-
-                    ;
-
-
                     if (!resp.isError()) {
-
                         Logs.d("Token sent!!! " + token);
-
-
                     } else {
                         Logs.e("That didn't work!");
-
                     }
                 }
             });

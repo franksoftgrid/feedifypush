@@ -65,9 +65,7 @@ public class FeedSDK extends Application {
     public static boolean isEnabled() {
         return Pref.get(mContext).getBoolean(Const.PREF_ENABLE_KEY, true);
     }
-    public static boolean isEnabled(Context mContext) {
-        return Pref.get(mContext).getBoolean(Const.PREF_ENABLE_KEY, true);
-    }
+
     /**
      * used to initialise the SDK and Firebase
      *
@@ -90,7 +88,6 @@ public class FeedSDK extends Application {
         } catch (Exception ex) {
             Logs.e(ex.getMessage());
         }
-
         try {
             saveToken(ctx);
             FeedRegisterManager.invoke(ctx);
